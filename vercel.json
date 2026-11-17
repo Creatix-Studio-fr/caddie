@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/menus.js": {
+      "maxDuration": 60
+    }
+  }
+}

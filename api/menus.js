@@ -6,7 +6,12 @@
 const crypto = require('crypto');
 const { INGREDIENTS } = require('../lib/catalogue.js');
 
-const MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+/* gemini-3.5-flash-lite : gratuit avec une limite quotidienne bien plus haute que gemini-3.8-flash. */
+const MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
+/* Secours facultatif : à définir dans Vercel uniquement après avoir vérifié son accès et son coût. */
+const FALLBACK_MODEL = (process.env.GEMINI_FALLBACK_MODEL || '').trim();
+const REQUEST_TIMEOUT_MS = 15000;
+const RETRY_DELAYS_MS = [1200, 2800]; // 3 tentatives maximum au total
 const IDS = Object.keys(INGREDIENTS);
 
 const STORES = ['leclerc', 'intermarche', 'auchan', 'carrefour', 'systemeu', 'lidl', 'aldi'];
@@ -117,17 +122,85 @@ const SCHEMA = {
   required: ['recipes']
 };
 
-async function callGemini(body) {
+async function callGemini(model, body) {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 22000);
+  const timer = setTimeout(() => ctrl.abort(), REQUEST_TIMEOUT_MS);
   try {
-    return await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODEL)}:generateContent`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': process.env.GEMINI_API_KEY },
       body: JSON.stringify(body),
       signal: ctrl.signal
     });
+    // Lire le corps avant de couper le timeout : Google y place le vrai motif d'échec.
+    const raw = await response.text();
+    let data = null;
+    try { data = raw ? JSON.parse(raw) : null; } catch (_) { /* réponse non JSON */ }
+    return {
+      status: response.status,
+      ok: response.ok,
+      data,
+      raw: raw.slice(0, 4000),
+      retryAfter: response.headers.get('retry-after')
+    };
   } finally { clearTimeout(timer); }
+}
+
+function wait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function retryDelay(result, retryIndex) {
+  const header = result && result.retryAfter;
+  if (header) {
+    const seconds = Number(header);
+    if (Number.isFinite(seconds)) return Math.min(5000, Math.max(0, seconds * 1000));
+    const date = Date.parse(header);
+    if (Number.isFinite(date)) return Math.min(5000, Math.max(0, date - Date.now()));
+  }
+  return RETRY_DELAYS_MS[retryIndex] || 2800;
+}
+
+function logGeminiFailure(model, status, data, raw, attempt, errorName) {
+  const providerError = data && data.error ? data.error : {};
+  // Ne jamais journaliser la clé API ni le prompt envoyé à Google.
+  console.error('Gemini request failed', JSON.stringify({
+    model,
+    status: status || null,
+    providerStatus: providerError.status || null,
+    message: String(providerError.message || raw || errorName || 'Erreur inconnue').slice(0, 1200),
+    attempt,
+    errorName: errorName || null
+  }));
+}
+
+async function generateWithModel(model, withSchema, base) {
+  let payload = withSchema;
+  let last = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      let result = await callGemini(model, payload);
+      // Si le format structuré est refusé, on retente une fois sans schéma.
+      if (result.status === 400 && payload === withSchema) {
+        logGeminiFailure(model, result.status, result.data, result.raw, attempt + 1);
+        payload = base;
+        result = await callGemini(model, payload);
+      }
+      if (result.ok) return { result, model };
+      last = result;
+      if (result.status === 429 || (result.status !== 500 && result.status !== 503)) {
+        logGeminiFailure(model, result.status, result.data, result.raw, attempt + 1);
+        return { result, model };
+      }
+      logGeminiFailure(model, result.status, result.data, result.raw, attempt + 1);
+      if (attempt < 2) await wait(retryDelay(result, attempt));
+    } catch (error) {
+      last = { status: 0, ok: false, data: null, raw: '', errorName: error && error.name };
+      logGeminiFailure(model, 0, null, '', attempt + 1, error && error.name);
+      if (attempt < 2) await wait(RETRY_DELAYS_MS[attempt]);
+    }
+  }
+  return { result: last || { status: 503, ok: false, data: null, raw: '' }, model };
 }
 
 function extractJson(text) {
@@ -188,25 +261,47 @@ module.exports = async function handler(req, res) {
     generationConfig: { temperature: 0.9, maxOutputTokens: 6000 }
   };
   try {
-    /* 1re tentative avec un format de réponse imposé ; si Google le refuse (400), on réessaie avec la consigne seule. */
-    let r = await callGemini({
+    /* Gemini peut renvoyer 503 en période de surcharge : 3 essais avec attente progressive. */
+    const withSchema = {
       ...base,
       generationConfig: { ...base.generationConfig, responseFormat: { text: { mimeType: 'APPLICATION_JSON', schema: SCHEMA } } }
-    });
-    if (r.status === 400) r = await callGemini(base);
-    if (r.status === 429) return res.status(429).json({ error: 'quota' });
-    if (!r.ok) { console.error('Gemini HTTP', r.status); return res.status(502).json({ error: 'ia_indisponible' }); }
+    };
 
-    const data = await r.json();
+    let outcome = await generateWithModel(MODEL, withSchema, base);
+    let r = outcome.result;
+
+    // Modèle de secours désactivé par défaut. Il faut le configurer explicitement dans Vercel.
+    if ((!r || !r.ok) && FALLBACK_MODEL && FALLBACK_MODEL !== MODEL && [0, 500, 503].includes(r && r.status)) {
+      console.warn('Gemini primary unavailable; trying configured fallback model', JSON.stringify({ primary: MODEL, fallback: FALLBACK_MODEL, status: r && r.status }));
+      outcome = await generateWithModel(FALLBACK_MODEL, withSchema, base);
+      r = outcome.result;
+    }
+
+    if (!r || !r.ok) {
+      const status = r && r.status;
+      if (status === 429) return res.status(429).json({ error: 'quota' });
+      return res.status(502).json({ error: status === 503 ? 'service_indisponible' : 'ia_indisponible' });
+    }
+
+    const data = r.data || {};
     const text = ((((data.candidates || [])[0] || {}).content || {}).parts || []).map(p => p.text || '').join('');
     const parsed = extractJson(text);
     const list = parsed && Array.isArray(parsed.recipes) ? parsed.recipes : [];
     const seen = new Set();
     const recipes = list.map(x => convert(x, prefs)).filter(x => x && !seen.has(x.id) && seen.add(x.id)).slice(0, prefs.meals);
-    if (!recipes.length) return res.status(502).json({ error: 'reponse_inutilisable' });
-    return res.status(200).json({ recipes, model: MODEL });
+    if (!recipes.length) {
+      const candidate = (data.candidates || [])[0] || {};
+      console.error('Gemini returned no usable recipes', JSON.stringify({
+        model: outcome.model,
+        finishReason: candidate.finishReason || null,
+        blockReason: data.promptFeedback && data.promptFeedback.blockReason || null,
+        responseTextLength: text.length
+      }));
+      return res.status(502).json({ error: 'reponse_inutilisable' });
+    }
+    return res.status(200).json({ recipes, model: outcome.model });
   } catch (e) {
-    console.error('Erreur IA', e && e.name);
+    console.error('Erreur IA inattendue', JSON.stringify({ name: e && e.name, message: String(e && e.message || 'Erreur inconnue').slice(0, 500) }));
     return res.status(502).json({ error: 'ia_indisponible' });
   }
 };

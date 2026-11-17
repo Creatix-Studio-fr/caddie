@@ -42,8 +42,10 @@ Si aucune pastille n'apparaît, le site a utilisé ses recettes de secours. Voir
 5. Si l'IA est lente, en panne ou a atteint sa limite gratuite, le site retombe sur ses recettes intégrées.
 
 ## Réglages utiles
-- `GEMINI_MODEL` (variable d'environnement facultative) : change de modèle sans toucher au code. Par défaut `gemini-3.8-flash`.
-  Si Google renomme ou retire ce modèle, c'est ici qu'on change.
+- `GEMINI_MODEL` (variable facultative) : modèle principal. Par défaut `gemini-3.5-flash-lite`.
+- `GEMINI_FALLBACK_MODEL` (facultative, vide par défaut) : modèle de secours essayé uniquement après 3 échecs temporaires du modèle principal. Ne l'active qu'après avoir vérifié qu'il est disponible pour ton projet et consulté son tarif/quotas. Il peut consommer un quota différent ou être payant.
+- En cas de 500/503 ou de timeout, le serveur effectue jusqu'à 3 tentatives avec attente progressive. Les erreurs 429 (quota) ne sont pas répétées automatiquement.
+- `vercel.json` fixe la durée maximale de la fonction IA à 60 secondes ; vérifie que ton offre Vercel autorise cette durée.
 - Ajouter un ingrédient : ajoute-le dans la liste `RAW` de `index.html` ET dans `lib/catalogue.js`.
 - Après chaque modification d'une variable d'environnement, il faut redéployer.
 
@@ -51,8 +53,17 @@ Si aucune pastille n'apparaît, le site a utilisé ses recettes de secours. Voir
 - Pas de pastille « IA » : dans Vercel, ouvre ton projet puis « Logs » (ou l'onglet « Functions »), refais un parcours et regarde l'erreur.
   - `cle_manquante` : la variable `GEMINI_API_KEY` n'existe pas ou le projet n'a pas été redéployé après l'ajout.
   - `quota` : la limite gratuite de Google est atteinte, réessaie plus tard.
-  - `ia_indisponible` : erreur côté Google (modèle renommé, clé refusée). Vérifie la clé et `GEMINI_MODEL`.
+  - `service_indisponible` : Google a renvoyé 503 après les nouvelles tentatives ; consulte les logs Vercel pour le message détaillé. C'est généralement une surcharge temporaire côté Google.
+  - `ia_indisponible` : autre erreur Google ou problème réseau ; les logs Vercel affichent maintenant le statut et le message renvoyés par Google. Vérifie aussi la clé et `GEMINI_MODEL`.
 - Le lien te demande de te connecter à Vercel : va dans Settings, Deployment Protection, et désactive la protection pour la production.
+
+## Combien de personnes par jour ?
+Chaque parcours terminé fait une requête à l'IA, et « Tout recomposer » en fait une de plus.
+Google ne publie plus ses limites gratuites. Mesures relevées par des tiers en automne 2026, par projet et sans garantie :
+- `gemini-3.5-flash-lite` : environ 15 requêtes par minute et 500 par jour, soit entre 250 et 500 personnes par jour selon qu'elles recomposent ou non.
+- `gemini-3.8-flash` : environ 5 par minute et 20 par jour.
+Le compteur du jour repart à zéro vers 9 h, heure de Paris. Tes vraies limites sont visibles dans ton compte AI Studio.
+Quand la limite est atteinte, personne n'est bloqué : le site utilise ses recettes intégrées pour les visiteurs suivants.
 
 ## Sécurité
 - La clé reste dans Vercel. Elle n'apparaît dans aucun fichier du site.

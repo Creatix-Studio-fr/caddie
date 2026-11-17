@@ -699,7 +699,7 @@ const AI_ENDPOINT='/api/menus';
 async function getMenus(){
   if(AI_ENDPOINT){
     try{
-      const ctrl=new AbortController(), to=setTimeout(()=>ctrl.abort(),25000);
+      const ctrl=new AbortController(), to=setTimeout(()=>ctrl.abort(),52000);
       const res=await fetch(AI_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prefs:S.prefs}),signal:ctrl.signal});
       clearTimeout(to);
       if(!res.ok) throw new Error('http '+res.status);
@@ -711,7 +711,7 @@ async function getMenus(){
         S.sel=[...picked,...rest]; S.extra=[...(S.extra||[]).filter(x=>!kept.some(k=>k.id===x.id)),...kept].slice(-40);
         S.sig=sigNow(); S.checked={}; save(); return;
       }
-    }catch(e){}
+    }catch(e){console.warn('Caddie : génération IA indisponible, utilisation des recettes locales.',e&&e.message?e.message:e);}
   }
   generate();
 }
