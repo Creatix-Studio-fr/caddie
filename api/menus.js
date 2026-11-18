@@ -10,9 +10,20 @@ const { INGREDIENTS } = require('../lib/catalogue.js');
 const MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
 /* Secours facultatif : à définir dans Vercel uniquement après avoir vérifié son accès et son coût. */
 const FALLBACK_MODEL = (process.env.GEMINI_FALLBACK_MODEL || '').trim();
-const REQUEST_TIMEOUT_MS = 15000;
+const REQUEST_TIMEOUT_MS = 38000; // le double de recettes détaillées demande plus de temps de génération
+const TOTAL_BUDGET_MS = 56000;    // reste sous la limite de 60 s de Vercel (voir vercel.json)
+const MIN_ATTEMPT_MS = 6000;      // on ne relance pas s'il reste moins de temps que ça
 const RETRY_DELAYS_MS = [1200, 2800]; // 3 tentatives maximum au total
 const IDS = Object.keys(INGREDIENTS);
+
+/* Matériel de cuisine : mêmes identifiants que le site. */
+const EQUIP_LABELS = {
+  plaques: 'plaques de cuisson', four: 'four', micro: 'micro-ondes', airfryer: 'air fryer', cocotte: 'cocotte-minute',
+  robot: 'robot cuiseur (type Cookeo ou Monsieur Cuisine)', mijoteuse: 'mijoteuse', cuiseurriz: 'cuiseur à riz', mixeur: 'mixeur ou blender'
+};
+const EQUIP_IDS = Object.keys(EQUIP_LABELS);
+const DEFAULT_EQUIP = ['plaques', 'four', 'micro'];
+const MAX_RECIPES = 28; // 2 × 14 repas
 
 const STORES = ['leclerc', 'intermarche', 'auchan', 'carrefour', 'systemeu', 'lidl', 'aldi'];
 const TASTE_LABELS = {
@@ -63,11 +74,13 @@ function cleanPrefs(p) {
     budget: num(p.budget, 1, 1000, 40),
     store: STORES.includes(p.store) ? p.store : 'leclerc',
     tastes: (Array.isArray(p.tastes) ? p.tastes : []).filter(x => TASTE_LABELS[x]).slice(0, 12),
-    avoid: (Array.isArray(p.avoid) ? p.avoid : []).filter(x => AVOID_TEST[x]).slice(0, 15)
+    avoid: (Array.isArray(p.avoid) ? p.avoid : []).filter(x => AVOID_TEST[x]).slice(0, 15),
+    equip: Array.isArray(p.equip) ? [...new Set(p.equip.filter(x => EQUIP_IDS.includes(x)))] : DEFAULT_EQUIP
   };
 }
 
 function buildPrompt(p) {
+  p.want = Math.min(MAX_RECIPES, p.meals * 2);
   const perMeal = Math.round((p.budget / (p.meals * p.people)) * 100) / 100;
   const catalogue = IDS.map(id => {
     const g = INGREDIENTS[id];
@@ -81,14 +94,18 @@ function buildPrompt(p) {
     '- Les quantités sont PAR PERSONNE : en g ou ml pour les ingrédients en g ou ml, en nombre de pièces sinon (0,5 est possible).',
     '- Chaque recette a 3 à 7 ingrédients. Jamais de sel, poivre, huile, beurre, sucre, farine ni épices de base : ils sont déjà dans le placard.',
     '- Recettes réalisables en 15 à 60 minutes, avec un nom de plat clair en français.',
+    '- Tu n’utilises QUE le matériel de cuisine disponible indiqué par la personne, jamais un autre appareil. Varie les modes de cuisson en profitant des appareils disponibles.',
+    '- Chaque recette a 3 à 6 étapes courtes (une phrase, 25 mots maximum), claires pour un débutant, avec températures et durées de cuisson. Elles citent les ingrédients par leur nom, sans identifiant.',
+    '- « prep » est le temps de préparation en minutes, « cook » le temps de cuisson en minutes. « equipment » liste les identifiants du matériel réellement utilisé.',
     '- Les recettes sont toutes différentes, avec au plus deux plats ayant la même base (pâtes, riz ou pommes de terre).',
     '- Tu respectes strictement les aliments à éviter.',
     '- Tu vises un coût moyen par personne et par repas proche de l’objectif, sans le dépasser, en t’aidant des prix des paquets.',
-    '- Tu réponds uniquement par un objet JSON de la forme {"recipes":[{"name":"...","minutes":30,"tags":["..."],"ingredients":[{"id":"...","qty":100}]}]}, sans aucun texte autour.',
+    '- Tu réponds uniquement par un objet JSON de la forme {"recipes":[{"name":"...","prep":10,"cook":20,"equipment":["plaques"],"tags":["..."],"ingredients":[{"id":"...","qty":100}],"steps":["..."]}]}, sans aucun texte autour.',
     `- Tags possibles : ${AI_TAGS.join(', ')}.`
   ].join('\n');
   const user = [
-    `Compose exactement ${p.meals} recettes différentes, pour ${p.people} personne(s).`,
+    `Compose exactement ${p.want} recettes différentes (le double des ${p.meals} repas demandés, pour que la personne puisse en changer certaines), pour ${p.people} personne(s).`,
+    `Matériel disponible : ${p.equip.length ? p.equip.map(e => `${e} (${EQUIP_LABELS[e]})`).join(', ') : 'aucun appareil de cuisson, uniquement des préparations froides'}.`,
     `Objectif de coût : environ ${perMeal} € par personne et par repas.`,
     p.tastes.length ? `Envies : ${p.tastes.map(t => TASTE_LABELS[t]).join(', ')}.` : 'Envies : aucune préférence, varie les plats.',
     p.avoid.length ? `À éviter absolument : ${p.avoid.map(a => AVOID_LABELS[a]).join(' ; ')}.` : 'À éviter : rien.',
@@ -108,23 +125,26 @@ const SCHEMA = {
         type: 'object',
         properties: {
           name: { type: 'string' },
-          minutes: { type: 'integer' },
+          prep: { type: 'integer' },
+          cook: { type: 'integer' },
+          equipment: { type: 'array', items: { type: 'string', enum: EQUIP_IDS } },
+          steps: { type: 'array', items: { type: 'string' } },
           tags: { type: 'array', items: { type: 'string' } },
           ingredients: {
             type: 'array',
             items: { type: 'object', properties: { id: { type: 'string', enum: IDS }, qty: { type: 'number' } }, required: ['id', 'qty'] }
           }
         },
-        required: ['name', 'minutes', 'ingredients']
+        required: ['name', 'prep', 'cook', 'equipment', 'ingredients', 'steps']
       }
     }
   },
   required: ['recipes']
 };
 
-async function callGemini(model, body) {
+async function callGemini(model, body, timeoutMs) {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), REQUEST_TIMEOUT_MS);
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs || REQUEST_TIMEOUT_MS);
   try {
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
       method: 'POST',
@@ -174,17 +194,21 @@ function logGeminiFailure(model, status, data, raw, attempt, errorName) {
   }));
 }
 
-async function generateWithModel(model, withSchema, base) {
+async function generateWithModel(model, withSchema, base, deadline) {
   let payload = withSchema;
   let last = null;
+  /* Temps accordé à un appel : jamais plus que ce qu'il reste avant la limite de la fonction. */
+  const slot = () => Math.min(REQUEST_TIMEOUT_MS, deadline - Date.now() - 1500);
   for (let attempt = 0; attempt < 3; attempt++) {
+    const ms = slot();
+    if (ms < MIN_ATTEMPT_MS) break;
     try {
-      let result = await callGemini(model, payload);
+      let result = await callGemini(model, payload, ms);
       // Si le format structuré est refusé, on retente une fois sans schéma.
-      if (result.status === 400 && payload === withSchema) {
+      if (result.status === 400 && payload === withSchema && slot() >= MIN_ATTEMPT_MS) {
         logGeminiFailure(model, result.status, result.data, result.raw, attempt + 1);
         payload = base;
-        result = await callGemini(model, payload);
+        result = await callGemini(model, payload, slot());
       }
       if (result.ok) return { result, model };
       last = result;
@@ -227,10 +251,26 @@ function convert(raw, prefs) {
   }
   const ids = Object.keys(i);
   if (ids.length < 2 || ids.length > 8) return null;
+  const clean = x => String(x || '').replace(/<[^>]*>/g, '').replace(/[<>]/g, '').trim();
+  /* étapes : indispensables pour afficher la recette */
+  const steps = (Array.isArray(raw.steps) ? raw.steps : []).map(x => clean(x).slice(0, 280)).filter(x => x.length >= 5).slice(0, 8);
+  if (steps.length < 2) return null;
+  /* matériel : uniquement celui que la personne possède */
+  const equipment = [...new Set((Array.isArray(raw.equipment) ? raw.equipment : []).map(String))];
+  if (equipment.some(e => !EQUIP_IDS.includes(e) || !prefs.equip.includes(e))) return null;
+  /* temps : préparation + cuisson, ou l'ancien champ « minutes » à défaut */
+  const hasPC = raw.prep != null || raw.cook != null;
+  const prep = Math.min(60, Math.max(0, Math.round(Number(raw.prep) || 0)));
+  const cook = Math.min(150, Math.max(0, Math.round(Number(raw.cook) || 0)));
+  const total = Math.min(180, Math.max(10, hasPC ? prep + cook : Math.round(Number(raw.minutes) || 30)));
+  const prepOut = hasPC ? Math.min(prep, total) : Math.min(10, total);
   const metas = ids.map(id => INGREDIENTS[id]);
   const r = {
     n: name,
-    t: Math.min(120, Math.max(10, Math.round(Number(raw.minutes) || 30))),
+    t: total,
+    p: prepOut,
+    s: steps,
+    eq: equipment,
     d: metas.some(m => m.d === 'viande') ? 'viande' : metas.some(m => m.d === 'poisson') ? 'poisson' : 'vegetarien',
     b: ids.includes('pates') ? 'pates' : ids.includes('riz') ? 'riz' : ids.includes('pdt') ? 'pdt' : 'autre',
     c: [...new Set(metas.flatMap(m => m.c))],
@@ -254,11 +294,12 @@ module.exports = async function handler(req, res) {
   try { if (typeof body === 'string') body = JSON.parse(body); } catch (e) { return res.status(400).json({ error: 'json' }); }
   const prefs = cleanPrefs(body && body.prefs);
   const { system, user } = buildPrompt(prefs);
+  const deadline = Date.now() + TOTAL_BUDGET_MS;
 
   const base = {
     systemInstruction: { parts: [{ text: system }] },
     contents: [{ role: 'user', parts: [{ text: user }] }],
-    generationConfig: { temperature: 0.9, maxOutputTokens: 6000 }
+    generationConfig: { temperature: 0.9, maxOutputTokens: 16000 }
   };
   try {
     /* Gemini peut renvoyer 503 en période de surcharge : 3 essais avec attente progressive. */
@@ -267,13 +308,13 @@ module.exports = async function handler(req, res) {
       generationConfig: { ...base.generationConfig, responseFormat: { text: { mimeType: 'APPLICATION_JSON', schema: SCHEMA } } }
     };
 
-    let outcome = await generateWithModel(MODEL, withSchema, base);
+    let outcome = await generateWithModel(MODEL, withSchema, base, deadline);
     let r = outcome.result;
 
     // Modèle de secours désactivé par défaut. Il faut le configurer explicitement dans Vercel.
     if ((!r || !r.ok) && FALLBACK_MODEL && FALLBACK_MODEL !== MODEL && [0, 500, 503].includes(r && r.status)) {
       console.warn('Gemini primary unavailable; trying configured fallback model', JSON.stringify({ primary: MODEL, fallback: FALLBACK_MODEL, status: r && r.status }));
-      outcome = await generateWithModel(FALLBACK_MODEL, withSchema, base);
+      outcome = await generateWithModel(FALLBACK_MODEL, withSchema, base, deadline);
       r = outcome.result;
     }
 
@@ -288,7 +329,7 @@ module.exports = async function handler(req, res) {
     const parsed = extractJson(text);
     const list = parsed && Array.isArray(parsed.recipes) ? parsed.recipes : [];
     const seen = new Set();
-    const recipes = list.map(x => convert(x, prefs)).filter(x => x && !seen.has(x.id) && seen.add(x.id)).slice(0, prefs.meals);
+    const recipes = list.map(x => convert(x, prefs)).filter(x => x && !seen.has(x.id) && seen.add(x.id)).slice(0, prefs.want);
     if (!recipes.length) {
       const candidate = (data.candidates || [])[0] || {};
       console.error('Gemini returned no usable recipes', JSON.stringify({

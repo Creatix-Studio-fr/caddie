@@ -220,6 +220,64 @@ button{font:inherit;color:inherit;cursor:pointer}
 .fine{font-size:14px;color:var(--muted);margin-top:8px}
 .copybox{width:100%;border:2px solid var(--line);border-radius:16px;background:var(--surface);color:var(--ink);font:14px/1.4 var(--f-body);padding:12px;margin-top:8px}
 
+
+/* onglets (courses) */
+.tabs{display:flex;gap:6px;background:var(--soft);border-radius:999px;padding:5px;margin-bottom:24px;max-width:420px}
+.tabs button{flex:1;border:0;background:none;border-radius:999px;height:46px;font-weight:600;font-size:16px;color:var(--muted);transition:background .2s,color .2s}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(13,31,22,.14)}
+.tabs button:not([aria-selected="true"]):hover{color:var(--ink)}
+
+/* cartes cliquables */
+.rcard[data-act="open"]{cursor:pointer}
+.rcard .go{font-size:14px;font-weight:600;color:var(--brand)}
+.rcard h3 .rlink{all:unset;cursor:pointer}
+.rcard h3 .rlink:focus-visible{outline:3px solid var(--brand);outline-offset:3px;border-radius:6px}
+.drawer .lab.sep{margin:22px 0 -4px}
+.drawer .lab.sep:first-child{margin-top:18px}
+
+/* détail d'une recette */
+.rd{display:grid;gap:20px}
+.rd-head{display:grid;gap:10px}
+.rd-head h2{font-size:clamp(26px,5vw,34px);line-height:1.1}
+.rd-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:10px}
+.fact{background:var(--soft);border-radius:16px;padding:10px 14px;display:grid;gap:1px}
+.fact small{font-size:12.5px;color:var(--muted);font-weight:600}
+.fact b{font:700 20px var(--f-head);letter-spacing:-.01em}
+.rd h3{font-size:19px;margin-bottom:10px}
+.rd-ings{list-style:none;margin:0;padding:0;background:var(--bg);border:1px solid var(--line);border-radius:18px}
+.rd-ings li{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:11px 16px;border-top:1px solid var(--line)}
+.rd-ings li:first-child{border-top:0}
+.rd-ings .qty{text-align:right;flex:none}
+.rd-ings .qty b{font-weight:600} .rd-ings .qty small{display:block;color:var(--muted);font-size:13px}
+.rd-eq{display:flex;flex-wrap:wrap;gap:8px}
+.rd-eq span{border:2px solid var(--line);border-radius:999px;padding:4px 14px;font-weight:600;font-size:14.5px}
+.rd-steps{list-style:none;margin:0;padding:0;display:grid;gap:14px;counter-reset:st}
+.rd-steps li{counter-increment:st;display:grid;grid-template-columns:34px minmax(0,1fr);gap:12px;align-items:start}
+.rd-steps li::before{content:counter(st);width:34px;height:34px;border-radius:50%;background:var(--brand);color:var(--brand-ink);display:grid;place-items:center;font:700 16px var(--f-head)}
+.rd-steps li span{padding-top:4px}
+.rd-note{font-size:14px;color:var(--muted)}
+dialog.rmodal{border:0;padding:0;background:var(--surface);color:var(--ink);border-radius:28px;width:min(680px,calc(100% - 20px));max-height:min(92dvh,900px);box-shadow:0 30px 80px -20px rgba(0,0,0,.45);overflow:hidden}
+dialog.rmodal[open]{display:flex;flex-direction:column;animation:rise .35s cubic-bezier(.2,.8,.2,1) both}
+dialog.rmodal::backdrop{background:rgba(5,15,10,.55);backdrop-filter:blur(3px)}
+.rm-top{display:flex;justify-content:flex-end;padding:14px 14px 0;flex:none}
+.rm-x{width:44px;height:44px;border-radius:50%;border:2px solid var(--line);background:var(--surface);display:grid;place-items:center;font-size:22px;line-height:1}
+.rm-x:hover{border-color:var(--brand)}
+.rm-body{overflow:auto;padding:0 26px 26px;overscroll-behavior:contain}
+.rm-foot{flex:none;display:flex;gap:10px;flex-wrap:wrap;padding:14px 26px;border-top:1px solid var(--line);background:var(--surface)}
+
+/* onglet Recettes */
+.rlist{display:grid;gap:14px}
+details.rdet{background:var(--surface);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow)}
+details.rdet>summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 14px;align-items:center;padding:18px 22px;border-radius:24px}
+details.rdet>summary::-webkit-details-marker{display:none}
+details.rdet>summary:focus-visible{outline:3px solid var(--brand);outline-offset:-3px}
+details.rdet>summary h3{font-size:20px;line-height:1.2}
+details.rdet>summary .sm{color:var(--muted);font-size:14.5px;grid-column:1}
+details.rdet>summary .chev{grid-column:2;grid-row:1/3;width:34px;height:34px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;transition:transform .3s,border-color .2s}
+details.rdet[open]>summary .chev{transform:rotate(180deg);border-color:var(--brand)}
+details.rdet>.rd{padding:2px 22px 24px}
+.tools{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+
 /* accueil */
 .intro{max-width:760px;justify-content:flex-start;padding-top:2vh}
 .logo{display:flex;align-items:center;gap:10px;font:700 28px var(--f-head);color:var(--brand);letter-spacing:-.03em;margin-bottom:clamp(28px,8vh,64px)}
@@ -257,6 +315,10 @@ button{font:inherit;color:inherit;cursor:pointer}
   .bar .btn.big{width:100%}
   .round{width:68px;height:68px}
   .rows{padding:0 14px}
+  .rd-facts{grid-template-columns:repeat(2,1fr)}
+  .rm-body{padding:0 18px 20px} .rm-foot{padding:12px 18px}
+  .rm-foot .btn{flex:1 1 100%}
+  details.rdet>summary{padding:16px 16px} details.rdet>.rd{padding:2px 16px 20px}
 }
 </style>
 
@@ -267,6 +329,7 @@ button{font:inherit;color:inherit;cursor:pointer}
   <header class="top" id="top" hidden></header>
   <main id="screen" class="screen"></main>
 </div>
+<dialog class="rmodal" id="rmodal" aria-label="Détail de la recette"></dialog>
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -342,7 +405,47 @@ const EXTRA={
   ratatouille:['mediterraneen','leger'], burrito:['mexicain','legumineuses'], pastachamp:['italien','cremeux'],
   'poulet-creme':['francais','cremeux'], steakpdt:['francais']
 };
-const REC_BY={}; REC.forEach(r=>{r.g=[...new Set([...r.g,...(EXTRA[r.id]||[])])]; r.ing=Object.entries(r.i).map(([id,q])=>[ING[id],q]); REC_BY[r.id]=r});
+/* Matériel de cuisine. Dans une recette, eq liste ce qu'il faut : un texte = obligatoire, une liste = au choix (l'un ou l'autre suffit). */
+const EQUIP_GROUPS=[
+  ['Cuisson de base',[['plaques','Plaques de cuisson'],['four','Four'],['micro','Micro-ondes']]],
+  ['Appareils en plus',[['airfryer','Air fryer'],['cocotte','Cocotte-minute'],['robot','Robot cuiseur'],['mijoteuse','Mijoteuse'],['cuiseurriz','Cuiseur à riz'],['mixeur','Mixeur ou blender']]]
+];
+const EQUIP=EQUIP_GROUPS.flatMap(g=>g[1]);
+const EQUIP_NAME=Object.fromEntries(EQUIP);
+const EQ={
+  gratinjambon:['four'], hachis:['plaques','four'], cuisses:[['four','airfryer']],
+  chili:[['plaques','cocotte','mijoteuse','robot']], lentilles:[['plaques','cocotte','robot']], soupe:[['plaques','cocotte','robot']],
+  ratatouille:[['plaques','cocotte','mijoteuse','robot']], saucisses:[['plaques','four','airfryer']]
+};
+/* préparation en minutes (le reste du temps total = cuisson) */
+const PREP={carbonara:5,currypoulet:10,bolo:10,gratinjambon:20,chili:15,omelette:10,lentilles:10,rizsaute:10,fajitas:10,saucisses:10,cuisses:10,pastathon:5,saumon:5,cabillaud:10,currypois:10,pestopates:5,hachis:20,soupe:15,shakshuka:10,ratatouille:15,burrito:10,pastachamp:10,'poulet-creme':10,steakpdt:10};
+const STEPS={
+ carbonara:['Fais cuire les pâtes dans une grande casserole d’eau bouillante salée, selon le temps indiqué sur le paquet.','Pendant ce temps, fais dorer les lardons à sec dans une poêle, sans matière grasse.','Bats les œufs dans un bol avec le gruyère râpé et du poivre.','Égoutte les pâtes en gardant un peu d’eau de cuisson, puis remets-les dans la casserole, hors du feu, avec les lardons.','Verse le mélange œufs-gruyère et remue vite, en ajoutant un peu d’eau de cuisson pour obtenir une sauce crémeuse. Sers aussitôt.'],
+ currypoulet:['Coupe le poulet en morceaux et émince l’oignon. Mets le riz à cuire dans de l’eau bouillante salée.','Fais revenir l’oignon 3 minutes dans un peu d’huile, ajoute le poulet et fais-le dorer 5 minutes.','Saupoudre de curry, mélange 1 minute, puis verse le lait de coco.','Laisse mijoter 12 à 15 minutes à feu doux, jusqu’à ce que le poulet soit cuit et la sauce épaissie.','Égoutte le riz et sers-le avec le poulet.'],
+ bolo:['Épluche et hache l’oignon, épluche et râpe les carottes.','Fais revenir l’oignon et les carottes 5 minutes dans un peu d’huile, ajoute le steak haché et émiette-le jusqu’à ce qu’il soit doré.','Verse le coulis de tomate, sale, poivre, et laisse mijoter 15 minutes à feu doux.','Fais cuire les pâtes dans l’eau bouillante salée, égoutte-les et sers-les avec la sauce.'],
+ gratinjambon:['Préchauffe le four à 180 °C. Épluche les pommes de terre et coupe-les en fines rondelles.','Frotte le plat avec la gousse d’ail, puis dispose les pommes de terre en couches avec le jambon coupé en morceaux.','Verse la crème (allongée d’un peu d’eau si elle est épaisse), sale, poivre, et recouvre de gruyère râpé.','Enfourne 40 à 45 minutes, jusqu’à ce que le dessus soit doré et que la pointe d’un couteau entre sans résistance.'],
+ chili:['Émince l’oignon et coupe le poivron en dés. Mets le riz à cuire.','Fais revenir l’oignon et le poivron 4 minutes, ajoute le steak haché et fais-le dorer.','Ajoute les tomates concassées, les haricots rouges égouttés, du sel, du poivre et du piment ou du paprika selon ton goût.','Laisse mijoter 20 à 25 minutes à feu doux, en remuant de temps en temps (15 minutes à la cocotte-minute).','Sers le chili sur le riz égoutté.'],
+ omelette:['Nettoie et émince les champignons. Fais-les sauter 5 minutes dans une poêle avec un peu d’huile, jusqu’à ce que l’eau s’évapore.','Bats les œufs avec du sel, du poivre et le gruyère, puis verse-les sur les champignons.','Cuis à feu moyen 3 à 4 minutes en ramenant les bords vers le centre, puis replie l’omelette.','Assaisonne la salade (huile, vinaigre, sel) et sers-la avec l’omelette.'],
+ lentilles:['Rince les lentilles, fais-les cuire 20 minutes dans de l’eau bouillante non salée, puis égoutte-les et laisse-les tiédir.','Râpe les carottes, émince finement l’oignon et émiette la feta.','Mélange le tout dans un saladier avec de l’huile, du vinaigre, du sel et du poivre.','Sers tiède ou froid.'],
+ rizsaute:['Fais cuire le riz et égoutte-le (froid, de la veille, il saute encore mieux).','Coupe les carottes en petits dés et émince l’oignon. Fais-les sauter 5 minutes dans une grande poêle avec les haricots verts.','Pousse les légumes sur le côté, casse les œufs dans la poêle et brouille-les.','Ajoute le riz, de la sauce soja si tu en as, et fais sauter 3 minutes à feu vif.'],
+ fajitas:['Émince le poulet, le poivron et l’oignon en lanières.','Fais dorer le poulet 6 à 8 minutes dans une poêle chaude avec un peu d’huile, sale, poivre, paprika si tu en as.','Ajoute le poivron et l’oignon et cuis 5 minutes de plus.','Réchauffe les tortillas 20 secondes à la poêle ou au micro-ondes.','Garnis-les de poulet et de légumes, parsème de gruyère, roule et sers.'],
+ saucisses:['Épluche les pommes de terre, coupe-les en morceaux et fais-les cuire 20 minutes dans de l’eau bouillante salée.','Pendant ce temps, fais cuire les saucisses 12 à 15 minutes à la poêle en les retournant (ou 15 minutes à l’air fryer à 180 °C, ou au four à 200 °C).','Égoutte les pommes de terre, écrase-les avec le lait chaud, du sel et du poivre.','Sers les saucisses sur la purée.'],
+ cuisses:['Préchauffe le four à 200 °C (ou l’air fryer à 190 °C).','Épluche les pommes de terre et les carottes, coupe-les en gros morceaux, écrase l’ail.','Mets tout dans un plat avec les cuisses, un filet d’huile, du sel, du poivre et des herbes si tu en as. Mélange bien.','Cuis 45 à 50 minutes au four (35 à 40 minutes à l’air fryer, en secouant à mi-cuisson), jusqu’à ce que la peau soit dorée et la viande bien cuite.'],
+ pastathon:['Fais cuire les pâtes dans l’eau bouillante salée.','Émince l’oignon et fais-le revenir 3 minutes dans un peu d’huile.','Ajoute le coulis de tomate, sale, poivre, laisse mijoter 10 minutes, puis incorpore le thon émietté.','Égoutte les pâtes, mélange-les à la sauce et sers.'],
+ saumon:['Fais cuire le riz dans l’eau bouillante salée. Détaille le brocoli en petits bouquets.','Cuis le brocoli 6 à 8 minutes à la vapeur ou dans l’eau du riz pendant les dernières minutes.','Fais cuire le saumon 4 minutes côté peau, puis 2 à 3 minutes de l’autre côté, dans une poêle chaude huilée.','Sers le saumon sur le riz, avec le brocoli.'],
+ cabillaud:['Verse la semoule dans un volume égal d’eau bouillante salée, couvre et laisse gonfler 5 minutes, puis égrène-la à la fourchette.','Coupe les courgettes et les tomates en dés. Fais-les revenir 10 minutes dans une poêle avec un peu d’huile.','Pose le cabillaud (décongelé) sur les légumes, sale, poivre, couvre et laisse cuire 8 à 10 minutes à feu doux.','Sers le poisson sur les légumes, avec la semoule.'],
+ currypois:['Mets le riz à cuire. Égoutte les pois chiches.','Fais chauffer un peu d’huile, ajoute le curry 30 secondes, puis les épinards surgelés. Couvre quelques minutes pour qu’ils décongèlent.','Ajoute les pois chiches et le lait de coco, sale, et laisse mijoter 10 minutes.','Sers le curry sur le riz égoutté.'],
+ pestopates:['Fais cuire les pâtes dans l’eau bouillante salée.','Coupe les courgettes en petits dés et fais-les dorer 6 à 8 minutes dans une poêle avec un peu d’huile.','Égoutte les pâtes et mélange-les avec les courgettes et le pesto, hors du feu. Sers aussitôt.'],
+ hachis:['Épluche les pommes de terre et fais-les cuire 20 minutes dans l’eau bouillante salée. Préchauffe le four à 200 °C.','Fais revenir l’oignon émincé, ajoute le steak haché, sale, poivre, et cuis 8 minutes.','Égoutte les pommes de terre et écrase-les avec le lait chaud pour obtenir une purée onctueuse.','Étale la viande dans un plat, recouvre de purée et parsème de gruyère.','Enfourne 20 à 25 minutes, jusqu’à ce que le dessus soit bien doré.'],
+ soupe:['Épluche et coupe en morceaux les carottes, les pommes de terre, les courgettes et l’oignon.','Mets-les dans une casserole, couvre d’eau à hauteur, sale légèrement et cuis 20 minutes à partir de l’ébullition.','Mixe la soupe (mixeur plongeant ou blender), ou écrase-la à la fourchette pour une soupe rustique.','Ajoute la crème, rectifie l’assaisonnement et sers chaud.'],
+ shakshuka:['Émince l’oignon et coupe le poivron en lanières.','Fais-les revenir 5 minutes dans une poêle profonde avec un peu d’huile.','Ajoute les tomates concassées, du paprika ou du piment, du sel et du poivre, puis laisse mijoter 10 minutes.','Creuse de petits puits dans la sauce, casses-y les œufs, couvre et cuis 5 à 7 minutes selon la cuisson souhaitée du jaune.'],
+ ratatouille:['Coupe les courgettes, les tomates et le poivron en dés, émince l’oignon.','Fais revenir l’oignon 3 minutes, ajoute le poivron et les courgettes, puis cuis 10 minutes.','Ajoute les tomates, sale, poivre, herbes de Provence si tu en as, couvre et laisse mijoter 20 minutes.','Cuis le riz à part dans l’eau bouillante salée et sers-le avec la ratatouille.'],
+ burrito:['Fais cuire le riz dans l’eau bouillante salée.','Égoutte les haricots rouges et le maïs, coupe le poivron et les tomates en petits dés.','Réchauffe les haricots, le maïs et le poivron 5 minutes à la poêle avec du sel, du poivre et du paprika ou du cumin.','Dresse le bol : le riz, le mélange chaud, puis les tomates fraîches.'],
+ pastachamp:['Fais cuire les pâtes dans l’eau bouillante salée.','Nettoie et émince les champignons, écrase l’ail. Fais-les dorer 6 à 8 minutes dans une poêle avec un peu d’huile.','Ajoute la crème, sale, poivre, et laisse réduire 3 minutes.','Mélange la sauce aux pâtes égouttées et sers.'],
+ 'poulet-creme':['Fais cuire le riz dans l’eau bouillante salée.','Coupe le poulet en morceaux et émince les champignons.','Fais dorer le poulet 6 minutes dans une poêle huilée, ajoute les champignons et cuis 4 minutes de plus.','Verse la crème, sale, poivre, et laisse mijoter 5 à 8 minutes à feu doux. Sers sur le riz.'],
+ steakpdt:['Épluche les pommes de terre, coupe-les en cubes et fais-les cuire 8 minutes dans l’eau bouillante, puis égoutte-les.','Fais-les dorer 12 à 15 minutes dans une poêle huilée, en remuant de temps en temps.','Pendant ce temps, fais cuire les haricots verts 8 minutes dans l’eau bouillante salée.','Cuis les steaks hachés 3 à 4 minutes de chaque côté. Sers le tout ensemble.']
+};
+const REC_BY={}; REC.forEach(r=>{r.g=[...new Set([...r.g,...(EXTRA[r.id]||[])])]; r.ing=Object.entries(r.i).map(([id,q])=>[ING[id],q]); r.eq=EQ[r.id]||['plaques']; r.p=Math.min(PREP[r.id]||10,r.t); r.s=STEPS[r.id]||[]; REC_BY[r.id]=r});
 /* Recettes venant d'ailleurs (IA, communauté plus tard) : tout est revérifié avant d'entrer dans REC. */
 const EXT_TAGS=['poulet','boeuf','epice','four','cremeux','leger','confort','italien','francais','mexicain','curry','mediterraneen','oeufs','legumineuses'];
 function registerRecipe(o){
@@ -356,6 +459,9 @@ function registerRecipe(o){
   const r={id,n:String(o.n||'Recette').slice(0,80),t:Math.min(180,Math.max(5,+o.t||30)),d:o.d,b:o.b,
     c:(Array.isArray(o.c)?o.c:[]).filter(x=>['porc','gluten','oeuf','lactose'].includes(x)),
     g:(Array.isArray(o.g)?o.g:[]).filter(x=>EXT_TAGS.includes(x)).slice(0,8),i,ai:true};
+  r.p=Math.min(r.t,Math.max(0,Math.round(+o.p)||Math.min(10,r.t)));
+  r.eq=(Array.isArray(o.eq)?o.eq:[]).filter(x=>EQUIP_NAME[x]).slice(0,8);
+  r.s=(Array.isArray(o.s)?o.s:[]).map(x=>String(x||'').replace(/[<>]/g,'').trim().slice(0,300)).filter(x=>x.length>=5).slice(0,10);
   r.ing=Object.entries(i).map(([k,q])=>[ING[k],q]);
   REC.push(r); REC_BY[id]=r; return id;
 }
@@ -390,14 +496,18 @@ const KIND={viande:'Viande',poisson:'Poisson',vegetarien:'Végétarien'};
 
 /* ---------- État ---------- */
 const KEY='caddie-v2';
-const defaults={people:2,meals:6,budget:40,store:'leclerc',tastes:[],avoid:[]};
-let S={prefs:{...defaults},sel:[],sig:'',checked:{},step:'intro',extra:[]};
+const defaults={people:2,meals:6,budget:40,store:'leclerc',tastes:[],avoid:[],equip:['plaques','four','micro']};
+const sigNow=()=>JSON.stringify(S.prefs);
+let S={prefs:{...defaults},sel:[],pool:[],sig:'',checked:{},step:'intro',extra:[]};
 try{
   const raw=localStorage.getItem(KEY);
-  if(raw){const o=JSON.parse(raw); S={...S,...o,prefs:{...defaults,...(o.prefs||{})}}; (S.extra||[]).forEach(registerRecipe); S.sel=(S.sel||[]).filter(id=>REC_BY[id]);}
+  if(raw){const o=JSON.parse(raw); S={...S,...o,prefs:{...defaults,...(o.prefs||{})}}; (S.extra||[]).forEach(registerRecipe); S.sel=(S.sel||[]).filter(id=>REC_BY[id]); S.pool=(S.pool||[]).filter(id=>REC_BY[id]);
+    const hadEquip=!!(o.prefs&&Array.isArray(o.prefs.equip));
+    S.prefs.equip=(hadEquip?o.prefs.equip:defaults.equip).filter(x=>EQUIP_NAME[x]);
+    if(!hadEquip&&S.sig) S.sig=sigNow();}
 }catch(e){}
+S.prefs.tastes=[...S.prefs.tastes]; S.prefs.avoid=[...S.prefs.avoid]; S.prefs.equip=[...S.prefs.equip];
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
-const sigNow=()=>JSON.stringify(S.prefs);
 
 /* ---------- Formats ---------- */
 const nf=new Intl.NumberFormat('fr-FR',{maximumFractionDigits:1});
@@ -414,9 +524,15 @@ function buyText(l){const g=l.ing; return (g.unit==='pc'&&g.pack===1)?fmtQty(l.p
 const store=()=>STORES.find(s=>s.id===S.prefs.store)||STORES[0];
 const baseCost=r=>r.ing.reduce((a,[g,q])=>a+q/g.pack*g.price,0);
 const tagsOf=r=>new Set([r.d,r.b,...r.g,...(r.t<=25?['rapide']:[]),...(baseCost(r)<=1.6?['eco']:[])]);
-function excluded(r){
+function avoided(r){
   return S.prefs.avoid.some(a=>AVOID_TEST[a]&&AVOID_TEST[a](r));
 }
+/* matériel : un texte = obligatoire, une liste = un des appareils suffit */
+function eqOk(r){
+  const own=S.prefs.equip;
+  return (r.eq||[]).every(e=>Array.isArray(e)?e.some(x=>own.includes(x)):own.includes(e));
+}
+function excluded(r){return avoided(r)||!eqOk(r)}
 function score(r){
   if(!S.prefs.tastes.length) return 1;
   const t=tagsOf(r); return 1+S.prefs.tastes.filter(x=>t.has(x)).length*2;
@@ -446,11 +562,9 @@ function sample(cand,n){
   }
   return out;
 }
-function generate(){
-  const p=S.prefs, cand=REC.filter(r=>!excluded(r)), n=Math.min(p.meals,cand.length);
-  S.sig=sigNow(); S.checked={};
-  if(!n){S.sel=[];save();return;}
-  let best=null;
+/* meilleur ensemble de n recettes parmi cand : budget respecté, goûts, variété des bases */
+function chooseSet(cand,n){
+  const p=S.prefs; let best=null;
   for(let t=0;t<500;t++){
     const pick=sample(cand,n);
     const b=basket(pick.map(r=>r.id),p.people);
@@ -462,13 +576,23 @@ function generate(){
     const obj=over*4+b.total*0.15-taste*0.8+pen;
     if(!best||obj<best.obj) best={obj,ids:pick.map(r=>r.id)};
   }
-  S.sel=best.ids; save();
+  return best?best.ids:[];
 }
-/* remplace une recette par une autre au hasard, renvoie l'identifiant de la nouvelle */
+/* S.sel = les repas du menu, S.pool = menu + idées de réserve (le double de recettes) */
+function generate(){
+  const p=S.prefs, cand=REC.filter(r=>!excluded(r)), n=Math.min(p.meals,cand.length);
+  S.sig=sigNow(); S.checked={};
+  if(!n){S.sel=[];S.pool=[];save();return;}
+  S.sel=chooseSet(cand,n);
+  const reserve=sample(cand.filter(r=>!S.sel.includes(r.id)),n).map(r=>r.id);
+  S.pool=[...S.sel,...reserve]; save();
+}
+/* remplace une recette par une autre (d'abord parmi les idées de réserve), renvoie l'identifiant de la nouvelle */
 function swap(id){
-  const cand=REC.filter(r=>!excluded(r)&&!S.sel.includes(r.id));
-  if(!cand.length) return null;
-  const r=sample(cand,1)[0], i=S.sel.indexOf(id);
+  const free=REC.filter(r=>!excluded(r)&&!S.sel.includes(r.id));
+  if(!free.length) return null;
+  const reserve=free.filter(r=>(S.pool||[]).includes(r.id));
+  const r=sample(reserve.length?reserve:free,1)[0], i=S.sel.indexOf(id);
   if(i>-1){S.sel[i]=r.id; save(); return r.id;}
   return null;
 }
@@ -477,11 +601,11 @@ function swap(id){
 /* ---------- Interface ---------- */
 const $=s=>document.querySelector(s);
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-const SEQ=['people','meals','budget','store','tastes','avoid','recap','menu','courses'];
-const PREV={people:'intro',meals:'people',budget:'meals',store:'budget',tastes:'store',avoid:'tastes',recap:'avoid',menu:'recap',courses:'menu'};
-const NEXT={intro:'people',people:'meals',meals:'budget',budget:'store',store:'tastes',tastes:'avoid',avoid:'recap',menu:'courses'};
-const EDITABLE=['people','meals','budget','store','tastes','avoid'];
-let busy=false, editing=false, shown=0, shownPct=0, fresh=null, drawerOpen=false, fallbackText='';
+const SEQ=['people','meals','budget','store','tastes','avoid','equip','recap','menu','courses'];
+const PREV={people:'intro',meals:'people',budget:'meals',store:'budget',tastes:'store',avoid:'tastes',equip:'avoid',recap:'equip',menu:'recap',courses:'menu'};
+const NEXT={intro:'people',people:'meals',meals:'budget',budget:'store',store:'tastes',tastes:'avoid',avoid:'equip',equip:'recap',menu:'courses'};
+const EDITABLE=['people','meals','budget','store','tastes','avoid','equip'];
+let busy=false, editing=false, shown=0, shownPct=0, fresh=null, drawerOpen=false, fallbackText='', coursesTab='liste';
 
 const ICON={
   arrow:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
@@ -494,6 +618,7 @@ const toneOf=per=>per<1.5?{k:'tight',t:'Serré',h:'Ça va être juste : les repa
   :per<3.5?{k:'ok',t:'Réaliste',h:'Un budget réaliste pour des repas variés.'}
   :{k:'easy',t:'Confortable',h:'Tu as de la marge pour te faire plaisir.'};
 const compatCount=()=>REC.filter(r=>!excluded(r)).length;
+const compatAvoid=()=>REC.filter(r=>!avoided(r)).length;
 const plural=(n,w)=>n>1?w+'s':w;
 
 const step=(title,sub,body,bar,cls='')=>`<section class="step ${cls}"><h1 class="q">${title}</h1>${sub?`<p class="sub">${sub}</p>`:''}<div class="body">${body}</div><div class="bar">${bar}</div></section>`;
@@ -505,6 +630,50 @@ const tasteMatches=()=>S.prefs.tastes.length?REC.filter(r=>{const t=tagsOf(r);re
 const tasteLabel=()=>S.prefs.tastes.length?'recettes correspondent à au moins une de tes envies':'recettes au choix';
 const groupChips=(groups,act,key,sel,countFn)=>groups.map(([label,items])=>`<div class="grp"><span class="lab">${label}</span><div class="chips">${items.map(([v,l])=>chip(act,key,v,l,sel.includes(v),countFn(v))).join('')}</div></div>`).join('');
 const dots=(n,newIdx=-1)=>Array.from({length:12},(_,i)=>`<i class="${i<n?'on':''} ${i===newIdx?'new':''}"></i>`).join('');
+
+/* ---------- Détail d'une recette ---------- */
+const CHEV='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+const CONTAINS={porc:'porc',gluten:'gluten',oeuf:'œuf',lactose:'lactose'};
+/* quantité lisible, avec fractions pour les boîtes et les pièces (½ boîte, ¼ de poivron…) */
+function qtyDetail(n,ing){
+  if(ing.unit!=='pc') return fmtQty(n,ing);
+  const w=Math.floor(n+1e-6), f=n-w;
+  const F=[[0,''],[.25,'¼'],[1/3,'⅓'],[.5,'½'],[2/3,'⅔'],[.75,'¾'],[1,'']];
+  const near=F.reduce((a,b)=>Math.abs(b[0]-f)<Math.abs(a[0]-f)?b:a);
+  if(Math.abs(near[0]-f)>.07) return fmtQty(n,ing);
+  const whole=near[0]===1?w+1:w, sym=near[1];
+  if(!whole&&!sym) return fmtQty(n,ing);
+  const noun=ing.noun&&(whole>1?ing.noun+'s':ing.noun);
+  return [whole||'',sym].filter(Boolean).join(' ')+(noun?' '+noun:'');
+}
+const eqLabels=r=>(r.eq||[]).map(e=>Array.isArray(e)?e.map(x=>EQUIP_NAME[x]).join(' ou '):EQUIP_NAME[e]).filter(Boolean);
+function recipeDetail(r,head=true){
+  const people=S.prefs.people, c=cost(r)*people, cook=Math.max(0,r.t-(r.p||0));
+  const eq=eqLabels(r), has=(r.c||[]).map(x=>CONTAINS[x]).filter(Boolean);
+  return `<div class="rd">
+    ${head?`<div class="rd-head"><div class="meta" style="justify-content:flex-start;gap:10px"><span class="kind k-${r.d}">${KIND[r.d]}</span>${r.ai?'<span class="tag" style="margin:0">IA</span>':''}</div><h2>${r.n}</h2></div>`:''}
+    <div class="rd-facts">
+      <div class="fact"><small>Préparation</small><b>${r.p||0} min</b></div>
+      <div class="fact"><small>Cuisson</small><b>${cook?cook+' min':'–'}</b></div>
+      <div class="fact"><small>Temps total</small><b>${r.t} min</b></div>
+      <div class="fact"><small>Coût pour ${people} pers.</small><b>${E(c)}</b></div>
+    </div>
+    <div><h3>Ingrédients <span class="muted" style="font:500 15px var(--f-body)">pour ${people} ${plural(people,'personne')}</span></h3>
+      <ul class="rd-ings">${r.ing.map(([g,q])=>`<li><span>${g.name}</span><span class="qty"><b>${qtyDetail(q*people,g)}</b><small>${qtyDetail(q,g)} par pers.</small></span></li>`).join('')}</ul>
+      <p class="rd-note" style="margin-top:8px">Dans le placard : sel, poivre, huile et épices de base.</p></div>
+    ${eq.length?`<div><h3>Matériel</h3><div class="rd-eq">${eq.map(x=>`<span>${x}</span>`).join('')}</div></div>`:''}
+    <div><h3>Préparation</h3>${r.s&&r.s.length?`<ol class="rd-steps">${r.s.map(x=>`<li><span>${x}</span></li>`).join('')}</ol>`:'<p class="rd-note">Les étapes de cette recette ne sont pas disponibles. Touche « Tout recomposer » dans le menu pour en générer de nouvelles.</p>'}</div>
+    ${has.length?`<p class="rd-note">Contient : ${has.join(', ')}.</p>`:''}
+  </div>`;
+}
+function recipesText(){
+  const p=S.prefs;
+  return `Recettes Caddie · ${p.people} pers. · ${S.sel.length} repas\n\n`+S.sel.map(id=>{
+    const r=REC_BY[id];
+    return `${r.n} (${r.t} min)\nIngrédients :\n${r.ing.map(([g,q])=>`- ${g.name} : ${qtyDetail(q*p.people,g)}`).join('\n')}\n`
+      +(r.s&&r.s.length?`Préparation :\n${r.s.map((x,i)=>`${i+1}. ${x}`).join('\n')}`:'');
+  }).join('\n\n');
+}
 
 const VIEWS={
 intro(){
@@ -553,11 +722,18 @@ tastes(){
     `<button class="btn primary big" data-act="next" id="nextlabel">${p.tastes.length?'Continuer':'Passer'}${ICON.arrow}</button>`);
 },
 avoid(){
-  const p=S.prefs, n=compatCount();
+  const p=S.prefs, n=compatAvoid();
   return step('Des aliments à éviter ?','On les retire de tous les menus. Le petit chiffre indique combien de recettes sont concernées.',
     `${groupChips(AVOID_GROUPS,'toggle','avoid',p.avoid,avoidCount)}
      <p class="compat"><b id="compat">${n}</b><span>recettes compatibles sur ${REC.length}</span></p><p class="bad" id="compatwarn" ${n<p.meals&&n>0?'':'hidden'}>Moins de recettes que de repas : on fera au mieux.</p>`,
     `<button class="btn primary big" data-act="next" id="nextlabel" ${n===0?'disabled':''}>${p.avoid.length?'Continuer':'Rien à éviter'}${ICON.arrow}</button>`);
+},
+equip(){
+  const p=S.prefs, n=compatCount();
+  return step('Quel matériel as-tu ?','Coche ce que tu possèdes : on ne te proposera que des recettes réalisables avec.',
+    `${groupChips(EQUIP_GROUPS,'toggle','equip',p.equip,()=>undefined)}
+     <p class="compat"><b id="equipcount">${n}</b><span>recettes réalisables sur ${REC.length}</span></p><p class="bad" id="equipwarn" ${n===0?'':'hidden'}>Aucune recette ne correspond à ce matériel. Ajoute au moins des plaques de cuisson ou un four.</p>`,
+    `<button class="btn primary big" data-act="next" id="nextlabel" ${n===0?'disabled':''}>Continuer${ICON.arrow}</button>`);
 },
 recap(){
   const p=S.prefs, per=perMeal();
@@ -565,7 +741,7 @@ recap(){
   const rows=[
     ['Personnes',String(p.people),'people'],['Repas',String(p.meals),'meals'],
     ['Budget',`${E(p.budget)} · ${E(per)} par repas et par personne`,'budget'],['Magasin',store().n,'store'],
-    ['Goûts',names(p.tastes,TASTES),'tastes'],['À éviter',names(p.avoid,AVOID),'avoid']];
+    ['Goûts',names(p.tastes,TASTES),'tastes'],['À éviter',names(p.avoid,AVOID),'avoid'],['Matériel',names(p.equip,EQUIP),'equip']];
   return step('On vérifie ?','Touche « Modifier » pour changer une réponse.',
     `<div class="recap">${rows.map(([l,v,s],i)=>`<div class="rrow" style="--i:${i}"><div><small>${l}</small><b>${v}</b></div><button class="edit" data-act="edit" data-val="${s}" aria-label="Modifier : ${l}">Modifier</button></div>`).join('')}</div>`,
     nextBtn('Composer mes menus'));
@@ -573,32 +749,42 @@ recap(){
 loading(){
   const li=(d,t)=>`<li style="--d:${d}s"><span class="box">${ICON.check}</span>${t}</li>`;
   return `<section class="step loading"><div class="cartbig">${ICON.cart}</div><h1 class="q">Je prépare tes menus</h1>
-    <ul class="ticks">${li(.3,'Je retire ce que tu veux éviter')}${li(1,'Je compose des menus variés')}${li(1.7,'Je calcule les prix dans ton magasin')}</ul></section>`;
+    <ul class="ticks">${li(.3,'Je retire ce que tu veux éviter')}${li(1,'Je compose des menus avec ton matériel')}${li(1.7,'Je calcule les prix dans ton magasin')}</ul>
+    <p class="muted">Je prépare deux fois plus de recettes que de repas, pour que tu puisses en changer. Compte jusqu’à 30 secondes.</p></section>`;
 },
 menu(){
   const p=S.prefs, cand=REC.filter(r=>!excluded(r));
   if(!cand.length) return step('Aucune recette ne correspond','Retire un des aliments à éviter pour retrouver des recettes.','',`<button class="btn primary big" data-act="fix">Modifier mes critères</button>`);
   const b=basket(S.sel,p.people), n=S.sel.length, over=b.total>p.budget, per=n?b.total/(n*p.people):0;
-  const spare=cand.filter(r=>!S.sel.includes(r.id));
-  const card=(r,i,on)=>`<article class="rcard ${on?'':'small'} ${fresh===r.id?'fresh':''}" data-id="${r.id}" style="--i:${i}">
+  const pool=S.pool||[], spare=cand.filter(r=>!S.sel.includes(r.id));
+  const reserve=spare.filter(r=>pool.includes(r.id)), others=spare.filter(r=>!pool.includes(r.id));
+  const card=(r,i,on)=>`<article class="rcard ${on?'':'small'} ${fresh===r.id?'fresh':''}" data-act="open" data-id="${r.id}" style="--i:${i}">
     <div class="meta"><span class="kind k-${r.d}">${KIND[r.d]}</span>${r.ai?'<span class="tag">IA</span>':''}<span class="muted">${r.t} min</span></div>
-    <h3>${r.n}</h3><p class="ings">${r.ing.slice(0,4).map(([g])=>g.name.toLowerCase()).join(', ')}</p>
+    <h3><button class="rlink" data-act="open" data-id="${r.id}">${r.n}</button></h3><p class="ings">${r.ing.slice(0,4).map(([g])=>g.name.toLowerCase()).join(', ')}</p>
+    <span class="go">Voir la recette</span>
     <div class="foot"><span class="cost">${E(cost(r))}<small> / pers.</small></span><span class="btns">${on
       ?`${spare.length?`<button class="chipbtn" data-act="swap" data-id="${r.id}">Autre idée</button>`:''}<button class="chipbtn" data-act="remove" data-id="${r.id}">Retirer</button>`
       :`<button class="chipbtn solid" data-act="add" data-id="${r.id}">Ajouter</button>`}</span></div></article>`;
-  return step('Voilà ton menu',`${n} repas pour ${p.people} ${plural(p.people,'personne')}. Change ce que tu veux.`,
+  const grid=(list)=>`<div class="cards" style="margin-top:18px">${list.map((r,i)=>card(r,i,false)).join('')}</div>`;
+  return step('Voilà ton menu',`${n} repas pour ${p.people} ${plural(p.people,'personne')}. Touche une recette pour voir le détail, ou change ce que tu veux.`,
     `<div class="bcard"><div><span class="lab">Panier estimé</span><div class="total" id="total">${E(shown)}</div></div>
        <div><div class="meter ${over?'over':''}"><span id="mbar" style="width:${shownPct}%"></span></div><p class="${over?'bad':'muted'}">${over?`Dépasse le budget de ${E(b.total-p.budget)}`:`Il reste ${E(p.budget-b.total)} sur ${E(p.budget)}`}</p></div>
        <div><span class="lab">Par repas et par personne</span><b class="bper" style="font:700 28px var(--f-head)">${n?E(per):'–'}</b></div></div>
      <div class="cards stagger">${S.sel.map((id,i)=>card(REC_BY[id],i,true)).join('')}</div>
      ${n?'':'<p class="muted" style="margin-bottom:16px">Aucun repas pour l’instant. Ajoute une recette ci-dessous.</p>'}
      ${spare.length?`<button class="btn ghost" data-act="more" aria-expanded="${drawerOpen}" aria-controls="drawer"><span class="pl">+</span> <span id="morelabel">${drawerOpen?'Masquer les autres recettes':'Ajouter une recette'}</span></button>
-     <div class="drawer ${drawerOpen?'open':''}" id="drawer" ${drawerOpen?'':'inert'}><div class="inner"><div class="cards" style="margin-top:18px">${spare.map((r,i)=>card(r,i,false)).join('')}</div></div></div>`:''}`,
+     <div class="drawer ${drawerOpen?'open':''}" id="drawer" ${drawerOpen?'':'inert'}><div class="inner">${reserve.length?`<span class="lab sep">Idées de réserve</span>${grid(reserve)}`:''}${others.length?`<span class="lab sep">${reserve.length?'Autres recettes du site':'Recettes disponibles'}</span>${grid(others)}`:''}</div></div>`:''}`,
     `<button class="btn big ghost" data-act="regen">Tout recomposer</button>${nextBtn('Voir ma liste de courses',!n)}`,'wide');
 },
 courses(){
   if(!S.sel.length) return step('Pas encore de liste','Ajoute des repas à ton menu pour obtenir ta liste.','',`<button class="btn primary big" data-act="back">Retour au menu</button>`);
   const p=S.prefs, b=basket(S.sel,p.people), over=b.total-p.budget, total=b.lines.length, done=b.lines.filter(l=>S.checked[l.ing.id]).length;
+  const tabs=`<div class="tabs" role="tablist" aria-label="Affichage"><button role="tab" aria-selected="${coursesTab==='liste'}" data-act="tab" data-val="liste">Liste de courses</button><button role="tab" aria-selected="${coursesTab==='recettes'}" data-act="tab" data-val="recettes">Recettes (${S.sel.length})</button></div>`;
+  if(coursesTab==='recettes') return step('Tes recettes',`${S.sel.length} repas pour ${p.people} ${plural(p.people,'personne')}. Touche une recette pour la déplier.`,
+    `${tabs}<div class="tools"><span class="muted">Quantités pour ${p.people} ${plural(p.people,'personne')}</span><button class="chipbtn" data-act="toggleall">Tout déplier</button></div>
+     <div class="rlist">${S.sel.map(id=>{const r=REC_BY[id]; return `<details class="rdet"><summary><h3>${r.n}</h3><span class="chev">${CHEV}</span><span class="sm">${r.t} min · ${E(cost(r)*p.people)} pour ${p.people} ${plural(p.people,'personne')}${r.ai?' · IA':''}</span></summary>${recipeDetail(r,false)}</details>`}).join('')}</div>
+     ${fallbackText?`<textarea class="copybox" id="copybox" rows="8" readonly aria-label="Recettes à copier">${fallbackText}</textarea>`:''}`,
+    `<button class="btn primary big" data-act="copyrec">Copier les recettes</button><button class="btn ghost big" data-act="restart">Recommencer</button>`,'mid');
   let idx=0;
   const aisles=RAYONS.map(([k,label])=>({label,lines:b.lines.filter(l=>l.ing.rayon===k)})).filter(g=>g.lines.length).map(g=>`<section class="aisle"><h2>${g.label}<span>${E(g.lines.reduce((a,l)=>a+l.cost,0))}</span></h2><div class="rows">${g.lines.map(l=>{
     const on=!!S.checked[l.ing.id];
@@ -606,7 +792,7 @@ courses(){
       <span class="nm"><b>${l.ing.name}</b><small>${l.recipes.length>1?l.recipes.length+' recettes':l.recipes[0]} · besoin ${fmtQty(l.need,l.ing)}${l.left>1e-6?`, reste ${fmtQty(l.left,l.ing)}`:''}</small></span>
       <span class="rt"><b>${buyText(l)}</b><small>${E(l.cost)}</small></span></label>`}).join('')}</div></section>`).join('');
   return step('Ta liste de courses',`${store().n} · ${p.people} ${plural(p.people,'personne')} · ${S.sel.length} repas`,
-    `<div class="bcard"><div><span class="lab">Total estimé</span><div class="total" id="total">${E(shown)}</div></div>
+    `${tabs}<div class="bcard"><div><span class="lab">Total estimé</span><div class="total" id="total">${E(shown)}</div></div>
        <div><div class="meter ${over>0?'over':''}"><span id="mbar" style="width:${shownPct}%"></span></div><p class="${over>0?'bad':'muted'}">${over>0?`Dépasse le budget de ${E(over)}`:`Il reste ${E(p.budget-b.total)} sur ${E(p.budget)}`}</p></div>
        <div><span class="lab">Dans le caddie</span><b style="font:700 28px var(--f-head)" id="chk" data-total="${total}">${done} / ${total}</b></div></div>
      <div class="done-msg" id="donemsg" ${done===total?'':'hidden'}>${ICON.check.replace('<svg','<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"').replace('<path ','<path style="stroke-dasharray:none" ')} Tout est dans le caddie. Bonnes courses !</div>
@@ -682,6 +868,7 @@ function next(){
   const s=S.step;
   if(editing&&EDITABLE.includes(s)){editing=false; return go('recap',1);}
   if(s==='recap') return begin();
+  if(s==='menu'){coursesTab='liste'; fallbackText='';}
   go(NEXT[s],1);
 }
 function back(){
@@ -699,16 +886,22 @@ const AI_ENDPOINT='/api/menus';
 async function getMenus(){
   if(AI_ENDPOINT){
     try{
-      const ctrl=new AbortController(), to=setTimeout(()=>ctrl.abort(),52000);
+      const ctrl=new AbortController(), to=setTimeout(()=>ctrl.abort(),58000);
       const res=await fetch(AI_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prefs:S.prefs}),signal:ctrl.signal});
       clearTimeout(to);
       if(!res.ok) throw new Error('http '+res.status);
       const data=await res.json(), ids=[], kept=[];
       (data.recipes||[]).forEach(o=>{const id=registerRecipe(o); if(id&&!excluded(REC_BY[id])&&!ids.includes(id)){ids.push(id); if(REC_BY[id].ai) kept.push(o);}});
       if(ids.length){
-        const picked=ids.slice(0,S.prefs.meals);
-        const rest=sample(REC.filter(r=>!excluded(r)&&!picked.includes(r.id)),Math.max(0,S.prefs.meals-picked.length)).map(r=>r.id);
-        S.sel=[...picked,...rest]; S.extra=[...(S.extra||[]).filter(x=>!kept.some(k=>k.id===x.id)),...kept].slice(-40);
+        const meals=S.prefs.meals;
+        /* l'IA renvoie le double de recettes : on garde le meilleur ensemble pour le budget, le reste sert de réserve */
+        const picked=ids.length>meals?chooseSet(ids.map(id=>REC_BY[id]),meals):ids.slice();
+        const rest=sample(REC.filter(r=>!excluded(r)&&!picked.includes(r.id)),Math.max(0,meals-picked.length)).map(r=>r.id);
+        S.sel=[...picked,...rest];
+        const spare=ids.filter(id=>!S.sel.includes(id));
+        const topUp=sample(REC.filter(r=>!excluded(r)&&!S.sel.includes(r.id)&&!spare.includes(r.id)),Math.max(0,meals-spare.length)).map(r=>r.id);
+        S.pool=[...S.sel,...spare,...topUp];
+        S.extra=[...(S.extra||[]).filter(x=>!kept.some(k=>k.id===x.id)),...kept].slice(-80);
         S.sig=sigNow(); S.checked={}; save(); return;
       }
     }catch(e){console.warn('Caddie : génération IA indisponible, utilisation des recettes locales.',e&&e.message?e.message:e);}
@@ -745,10 +938,29 @@ function updateTasteUI(){
   const nb=$('#nextlabel'); if(nb) nb.firstChild.textContent=a.length?'Continuer':'Passer';
 }
 function updateAvoidUI(){
-  const n=compatCount(), p=S.prefs;
+  const n=compatAvoid(), p=S.prefs;
   countUp($('#compat'),n,undefined,x=>String(Math.round(x)));
   const w=$('#compatwarn'); if(w) w.hidden=!(n<p.meals&&n>0);
   const nb=$('#nextlabel'); if(nb){nb.disabled=n===0; nb.firstChild.textContent=p.avoid.length?'Continuer':'Rien à éviter';}
+}
+function updateEquipUI(){
+  const n=compatCount();
+  countUp($('#equipcount'),n,undefined,x=>String(Math.round(x)));
+  const w=$('#equipwarn'); if(w) w.hidden=n!==0;
+  const nb=$('#nextlabel'); if(nb) nb.disabled=n===0;
+}
+function openRecipe(id){
+  const r=REC_BY[id]; if(!r) return;
+  const m=$('#rmodal'), inMenu=S.sel.includes(id);
+  m.innerHTML=`<div class="rm-top"><button class="rm-x" data-act="closemodal" aria-label="Fermer">×</button></div><div class="rm-body">${recipeDetail(r,true)}</div><div class="rm-foot">${inMenu?'':`<button class="btn primary" data-act="addclose" data-id="${id}">Ajouter au menu</button>`}<button class="btn" data-act="closemodal">Fermer</button></div>`;
+  if(typeof m.showModal==='function') m.showModal(); else m.setAttribute('open','');
+  m.querySelector('.rm-body').scrollTop=0;
+}
+function closeRecipe(){const m=$('#rmodal'); if(m.open){typeof m.close==='function'?m.close():m.removeAttribute('open');}}
+async function copyRecipes(){
+  const text=recipesText();
+  try{await navigator.clipboard.writeText(text); fallbackText=''; flash('Recettes copiées');}
+  catch(e){fallbackText=text; refresh(); const box=$('#copybox'); if(box){box.focus(); box.select(); box.scrollIntoView({block:'center'});} flash('Sélectionne le texte pour le copier');}
 }
 function leaveCard(id,cb){
   const c=document.querySelector('.rcard[data-id="'+id+'"]');
@@ -774,6 +986,7 @@ async function copyList(){
 }
 
 document.addEventListener('click',e=>{
+  if(e.target.id==='rmodal') return closeRecipe();
   const el=e.target.closest('[data-act]'); if(!el||el.disabled) return;
   const {act,key,val,id}=el.dataset, p=S.prefs;
   switch(act){
@@ -785,7 +998,7 @@ document.addEventListener('click',e=>{
     case 'store': {p.store=val; save(); document.querySelectorAll('[data-act="store"]').forEach(b=>b.setAttribute('aria-pressed',String(b===el))); restart(el,'pop'); return;}
     case 'toggle': {const a=p[key], i=a.indexOf(val); if(i>-1) a.splice(i,1); else a.push(val); save();
       el.setAttribute('aria-pressed',String(i===-1)); restart(el,'pop');
-      if(key==='avoid') updateAvoidUI(); else updateTasteUI();
+      if(key==='avoid') updateAvoidUI(); else if(key==='equip') updateEquipUI(); else updateTasteUI();
       return;}
     case 'edit': editing=true; return go(val,-1);
     case 'fix': editing=true; return go('avoid',-1);
@@ -798,6 +1011,12 @@ document.addEventListener('click',e=>{
       const row=el.closest('.row'); row.classList.toggle('done',el.checked); if(el.checked) burst(row.querySelector('.box')); updateChecked(); return;}
     case 'regen': S.sig=''; return go('loading',1);
     case 'copy': return copyList();
+    case 'copyrec': return copyRecipes();
+    case 'open': return openRecipe(id);
+    case 'closemodal': return closeRecipe();
+    case 'addclose': closeRecipe(); if(!S.sel.includes(id)){S.sel.push(id); save(); fresh=id;} refresh(); return;
+    case 'tab': if(coursesTab!==val){coursesTab=val; fallbackText=''; refresh();} return;
+    case 'toggleall': {const ds=[...document.querySelectorAll('details.rdet')], open=ds.some(d=>!d.open); ds.forEach(d=>{d.open=open}); el.textContent=open?'Tout replier':'Tout déplier'; return;}
     case 'restart': editing=false; return go('people',-1);
   }
 });

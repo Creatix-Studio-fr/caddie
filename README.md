@@ -33,10 +33,16 @@ lib/catalogue.js    la liste des ingrédients que l'IA a le droit d'utiliser
 Ouvre l'adresse, fais le parcours jusqu'à « Composer mes menus ». Les recettes venant de l'IA ont une pastille « IA ».
 Si aucune pastille n'apparaît, le site a utilisé ses recettes de secours. Voir « Si ça ne marche pas ».
 
+## Nouveautés
+- **Matériel** : une étape du questionnaire (après « À éviter ») où l'on coche ce que l'on possède : plaques, four, micro-ondes, air fryer, cocotte-minute, robot cuiseur, mijoteuse, cuiseur à riz, mixeur. Les recettes qui demandent un appareil absent sont écartées, et l'IA ne peut utiliser que le matériel coché.
+- **Le double de recettes** : l'IA génère 2 fois plus de recettes que de repas demandés (28 maximum). Le site garde les meilleures pour le budget ; les autres sont des « idées de réserve » utilisées par « Autre idée » et « Ajouter une recette ».
+- **Détail d'une recette** : toucher une recette du menu ouvre une fiche (préparation, cuisson, temps total, quantités pour le nombre de personnes, matériel, étapes, allergènes).
+- **Onglet Recettes** : sur l'écran « Ta liste de courses », l'onglet « Recettes » déplie le détail de toutes les recettes du menu, avec un bouton pour les copier.
+
 ## Comment ça marche
-1. Le site envoie tes réponses à `/api/menus`.
-2. Le serveur donne à Gemini la liste des ingrédients autorisés, tes envies et tes exclusions.
-3. Il vérifie chaque recette : ingrédients connus, quantités raisonnables, aucun aliment à éviter.
+1. Le site envoie tes réponses (dont le matériel) à `/api/menus`.
+2. Le serveur donne à Gemini la liste des ingrédients autorisés, ton matériel, tes envies et tes exclusions, et lui demande le double de recettes avec leurs étapes.
+3. Il vérifie chaque recette : ingrédients connus, quantités raisonnables, aucun aliment à éviter, matériel possédé, étapes présentes.
    Le régime, les allergènes et les étiquettes sont déduits des ingrédients par le serveur, jamais par l'IA.
 4. Le site calcule lui-même les prix. L'IA ne voit pas le budget en euros du panier, seulement un objectif par repas.
 5. Si l'IA est lente, en panne ou a atteint sa limite gratuite, le site retombe sur ses recettes intégrées.
@@ -45,7 +51,7 @@ Si aucune pastille n'apparaît, le site a utilisé ses recettes de secours. Voir
 - `GEMINI_MODEL` (variable facultative) : modèle principal. Par défaut `gemini-3.5-flash-lite`.
 - `GEMINI_FALLBACK_MODEL` (facultative, vide par défaut) : modèle de secours essayé uniquement après 3 échecs temporaires du modèle principal. Ne l'active qu'après avoir vérifié qu'il est disponible pour ton projet et consulté son tarif/quotas. Il peut consommer un quota différent ou être payant.
 - En cas de 500/503 ou de timeout, le serveur effectue jusqu'à 3 tentatives avec attente progressive. Les erreurs 429 (quota) ne sont pas répétées automatiquement.
-- `vercel.json` fixe la durée maximale de la fonction IA à 60 secondes ; vérifie que ton offre Vercel autorise cette durée.
+- `vercel.json` fixe la durée maximale de la fonction IA à 60 secondes ; vérifie que ton offre Vercel autorise cette durée. Comme l'IA écrit maintenant le double de recettes avec leurs étapes, une génération prend de 10 à 30 secondes. Le serveur arrête de relancer Gemini avant la limite des 60 s, et le site retombe alors sur ses recettes intégrées (qui ont aussi leurs étapes).
 - Ajouter un ingrédient : ajoute-le dans la liste `RAW` de `index.html` ET dans `lib/catalogue.js`.
 - Après chaque modification d'une variable d'environnement, il faut redéployer.
 
