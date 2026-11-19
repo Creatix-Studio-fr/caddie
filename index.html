@@ -278,6 +278,18 @@ details.rdet[open]>summary .chev{transform:rotate(180deg);border-color:var(--bra
 details.rdet>.rd{padding:2px 22px 24px}
 .tools{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
 
+/* prix réels (Open Prices) */
+.geo{margin-top:26px;max-width:460px}
+.geo-row{display:flex;gap:10px;margin-top:8px}
+.geo-row input{flex:1;min-width:0;height:52px;border:2px solid var(--line);border-radius:16px;background:var(--surface);color:var(--ink);font:600 20px var(--f-body);padding:0 16px;letter-spacing:.06em}
+.geo-row input:focus{outline:0;border-color:var(--brand)}
+.geo p{margin-top:8px;font-size:15px}
+.src{display:block;font-size:12.5px;color:var(--muted)}
+.src.ok{color:var(--brand)}
+.pbox .rd-ings li{align-items:flex-start}
+.pbox .rd-ings small{font-size:13px;color:var(--muted);display:block}
+.pbox a{color:var(--brand);font-weight:600}
+
 /* accueil */
 .intro{max-width:760px;justify-content:flex-start;padding-top:2vh}
 .logo{display:flex;align-items:center;gap:10px;font:700 28px var(--f-head);color:var(--brand);letter-spacing:-.03em;margin-bottom:clamp(28px,8vh,64px)}
@@ -496,9 +508,9 @@ const KIND={viande:'Viande',poisson:'Poisson',vegetarien:'Végétarien'};
 
 /* ---------- État ---------- */
 const KEY='caddie-v2';
-const defaults={people:2,meals:6,budget:40,store:'leclerc',tastes:[],avoid:[],equip:['plaques','four','micro']};
+const defaults={people:2,meals:6,budget:40,store:'leclerc',tastes:[],avoid:[],equip:['plaques','four','micro'],place:null};
 const sigNow=()=>JSON.stringify(S.prefs);
-let S={prefs:{...defaults},sel:[],pool:[],sig:'',checked:{},step:'intro',extra:[]};
+let S={prefs:{...defaults},sel:[],pool:[],sig:'',checked:{},step:'intro',extra:[],prices:null};
 try{
   const raw=localStorage.getItem(KEY);
   if(raw){const o=JSON.parse(raw); S={...S,...o,prefs:{...defaults,...(o.prefs||{})}}; (S.extra||[]).forEach(registerRecipe); S.sel=(S.sel||[]).filter(id=>REC_BY[id]); S.pool=(S.pool||[]).filter(id=>REC_BY[id]);
@@ -507,6 +519,8 @@ try{
     if(!hadEquip&&S.sig) S.sig=sigNow();}
 }catch(e){}
 S.prefs.tastes=[...S.prefs.tastes]; S.prefs.avoid=[...S.prefs.avoid]; S.prefs.equip=[...S.prefs.equip];
+{const pl=S.prefs.place; if(!pl||!Number.isFinite(pl.lat)||!Number.isFinite(pl.lon)||!/^\d{5}$/.test(String(pl.cp))) S.prefs.place=null; else S.prefs.place={cp:String(pl.cp),label:String(pl.label||pl.cp).slice(0,60),lat:pl.lat,lon:pl.lon};}
+if(!S.prices||typeof S.prices!=='object'||!S.prices.items) S.prices=null;
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 
 /* ---------- Formats ---------- */
@@ -522,6 +536,11 @@ function buyText(l){const g=l.ing; return (g.unit==='pc'&&g.pack===1)?fmtQty(l.p
 
 /* ---------- Calculs ---------- */
 const store=()=>STORES.find(s=>s.id===S.prefs.store)||STORES[0];
+/* Prix réels (Open Prices) : valables pour une enseigne et une zone. Sinon on garde le tarif de référence ajusté à l'enseigne. */
+const priceKey=()=>{const pl=S.prefs.place; return S.prefs.store+'|'+(pl?pl.lat+','+pl.lon:'')};
+const livePrice=g=>{const x=S.prices&&S.prices.key===priceKey()&&S.prices.items&&S.prices.items[g.id]; return x&&x.p>0?x:null};
+const priceOf=g=>{const x=livePrice(g); return x?x.p:g.price*store().k};
+const liveCount=()=>S.prices&&S.prices.key===priceKey()?Object.keys(S.prices.items).filter(id=>ING[id]).length:0;
 const baseCost=r=>r.ing.reduce((a,[g,q])=>a+q/g.pack*g.price,0);
 const tagsOf=r=>new Set([r.d,r.b,...r.g,...(r.t<=25?['rapide']:[]),...(baseCost(r)<=1.6?['eco']:[])]);
 function avoided(r){
@@ -538,7 +557,7 @@ function score(r){
   const t=tagsOf(r); return 1+S.prefs.tastes.filter(x=>t.has(x)).length*2;
 }
 /* coût au prorata par personne */
-function cost(r){return r.ing.reduce((a,[g,q])=>a+q/g.pack*g.price*store().k,0)}
+function cost(r){return r.ing.reduce((a,[g,q])=>a+q/g.pack*priceOf(g),0)}
 /* panier réel : paquets entiers à acheter */
 function basket(ids,people){
   const need={},from={};
@@ -548,7 +567,7 @@ function basket(ids,people){
   const lines=Object.keys(need).map(id=>{
     const g=ING[id], n=need[id];
     const packs=Math.max(1,Math.ceil(n/g.pack-1e-6));
-    const c=Math.round(packs*g.price*store().k*100)/100;
+    const c=Math.round(packs*priceOf(g)*100)/100;
     return {ing:g,need:n,packs,cost:c,left:packs*g.pack-n,recipes:from[id]};
   }).sort((a,b)=>order.indexOf(a.ing.rayon)-order.indexOf(b.ing.rayon)||a.ing.name.localeCompare(b.ing.name,'fr'));
   return {lines,total:Math.round(lines.reduce((a,l)=>a+l.cost,0)*100)/100,count:lines.length};
@@ -710,9 +729,12 @@ budget(){
 },
 store(){
   const p=S.prefs;
-  return step('Où fais-tu tes courses ?','On ajuste les prix à ton enseigne.',
+  return step('Où fais-tu tes courses ?','On utilise les prix réellement relevés dans ton enseigne, puis ton code postal pour viser ton coin.',
     `<div class="tiles">${STORES.map(s=>{const d=Math.round((s.k-1)*100); const sub=d===0?'Prix de référence':(d>0?'≈ +'+d+' %':'≈ −'+Math.abs(d)+' %')+' sur la référence';
-      return `<button class="tile" aria-pressed="${p.store===s.id}" data-act="store" data-val="${s.id}"><span class="ck">${ICON.check.replace('<svg','<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"').replace('<path ','<path style="stroke-dasharray:none" ')}</span><b>${s.n}</b><small>${sub}</small></button>`}).join('')}</div>`,
+      return `<button class="tile" aria-pressed="${p.store===s.id}" data-act="store" data-val="${s.id}"><span class="ck">${ICON.check.replace('<svg','<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"').replace('<path ','<path style="stroke-dasharray:none" ')}</span><b>${s.n}</b><small>${sub}</small></button>`}).join('')}</div>
+     <div class="geo"><label class="lab" for="cp">Code postal (facultatif)</label>
+       <div class="geo-row"><input id="cp" inputmode="numeric" autocomplete="postal-code" maxlength="5" placeholder="Ex. 76000" value="${p.place?p.place.cp:''}"><button class="chipbtn solid" data-act="geo">Localiser</button>${p.place?'<button class="chipbtn" data-act="clearplace">Effacer</button>':''}</div>
+       <p id="geomsg" class="muted">${p.place?`Prix relevés autour de ${p.place.label}.`:'Sans code postal, on utilise les prix relevés partout en France.'}</p></div>`,
     nextBtn());
 },
 tastes(){
@@ -740,7 +762,7 @@ recap(){
   const names=(list,all)=>list.length?list.map(v=>(all.find(x=>x[0]===v)||[0,v])[1]).join(', '):'Aucun';
   const rows=[
     ['Personnes',String(p.people),'people'],['Repas',String(p.meals),'meals'],
-    ['Budget',`${E(p.budget)} · ${E(per)} par repas et par personne`,'budget'],['Magasin',store().n,'store'],
+    ['Budget',`${E(p.budget)} · ${E(per)} par repas et par personne`,'budget'],['Magasin',store().n+(S.prefs.place?' · '+S.prefs.place.label:''),'store'],
     ['Goûts',names(p.tastes,TASTES),'tastes'],['À éviter',names(p.avoid,AVOID),'avoid'],['Matériel',names(p.equip,EQUIP),'equip']];
   return step('On vérifie ?','Touche « Modifier » pour changer une réponse.',
     `<div class="recap">${rows.map(([l,v,s],i)=>`<div class="rrow" style="--i:${i}"><div><small>${l}</small><b>${v}</b></div><button class="edit" data-act="edit" data-val="${s}" aria-label="Modifier : ${l}">Modifier</button></div>`).join('')}</div>`,
@@ -749,7 +771,7 @@ recap(){
 loading(){
   const li=(d,t)=>`<li style="--d:${d}s"><span class="box">${ICON.check}</span>${t}</li>`;
   return `<section class="step loading"><div class="cartbig">${ICON.cart}</div><h1 class="q">Je prépare tes menus</h1>
-    <ul class="ticks">${li(.3,'Je retire ce que tu veux éviter')}${li(1,'Je compose des menus avec ton matériel')}${li(1.7,'Je calcule les prix dans ton magasin')}</ul>
+    <ul class="ticks">${li(.3,'Je retire ce que tu veux éviter')}${li(1,'Je compose des menus avec ton matériel')}${li(1.7,'Je relève les prix réels dans ton magasin')}</ul>
     <p class="muted">Je prépare deux fois plus de recettes que de repas, pour que tu puisses en changer. Compte jusqu’à 30 secondes.</p></section>`;
 },
 menu(){
@@ -790,15 +812,21 @@ courses(){
     const on=!!S.checked[l.ing.id];
     return `<label class="row ${on?'done':''}" style="--i:${idx++}"><input type="checkbox" data-act="check" data-id="${l.ing.id}" ${on?'checked':''}><span class="box">${ICON.check}</span>
       <span class="nm"><b>${l.ing.name}</b><small>${l.recipes.length>1?l.recipes.length+' recettes':l.recipes[0]} · besoin ${fmtQty(l.need,l.ing)}${l.left>1e-6?`, reste ${fmtQty(l.left,l.ing)}`:''}</small></span>
-      <span class="rt"><b>${buyText(l)}</b><small>${E(l.cost)}</small></span></label>`}).join('')}</div></section>`).join('');
+      <span class="rt"><b>${buyText(l)}</b><small>${E(l.cost)}</small>${(()=>{const x=livePrice(l.ing); return x?`<small class="src ok">relevé ${fmtDate(x.d)}</small>`:'<small class="src">estimé</small>'})()}</span></label>`}).join('')}</div></section>`).join('');
+  const nLive=b.lines.filter(l=>livePrice(l.ing)).length;
+  const pbox=`<details class="rdet pbox" style="margin-top:22px"><summary><h3>D’où viennent les prix ?</h3><span class="chev">${CHEV}</span><span class="sm">${nLive} ingrédient${nLive>1?'s':''} sur ${total} avec un prix relevé</span></summary><div class="rd">
+    <p class="rd-note">Les prix « relevés » viennent d’<a href="https://prices.openfoodfacts.org" target="_blank" rel="noopener">Open Prices</a> (Open Food Facts) : des prix saisis par des habitants, avec la date et une photo de l’étiquette ou du ticket. On garde le prix médian des relevés récents, d’abord dans ton enseigne${S.prefs.place?' près de '+S.prefs.place.label:''}, sinon dans les autres magasins. Les ingrédients sans assez de relevés restent estimés.</p>
+    <ul class="rd-ings">${b.lines.map(l=>{const x=livePrice(l.ing); return `<li><span>${l.ing.name}<small>${x?srcText(x)+(x.code?` · <a href="https://prices.openfoodfacts.org/products/${encodeURIComponent(x.code)}" target="_blank" rel="noopener">voir les relevés</a>`:''):'Estimation (pas assez de relevés)'}</small></span><span class="qty"><b>${E(priceOf(l.ing))}</b><small>${l.ing.unit==='pc'&&l.ing.pack===1?'l’unité':'le paquet de '+fmtQty(l.ing.pack,l.ing)}</small></span></li>`}).join('')}</ul>
+    <p class="rd-note">Données Open Prices © Open Food Facts et contributeurs, licence ODbL.</p></div></details>`;
   return step('Ta liste de courses',`${store().n} · ${p.people} ${plural(p.people,'personne')} · ${S.sel.length} repas`,
     `${tabs}<div class="bcard"><div><span class="lab">Total estimé</span><div class="total" id="total">${E(shown)}</div></div>
        <div><div class="meter ${over>0?'over':''}"><span id="mbar" style="width:${shownPct}%"></span></div><p class="${over>0?'bad':'muted'}">${over>0?`Dépasse le budget de ${E(over)}`:`Il reste ${E(p.budget-b.total)} sur ${E(p.budget)}`}</p></div>
        <div><span class="lab">Dans le caddie</span><b style="font:700 28px var(--f-head)" id="chk" data-total="${total}">${done} / ${total}</b></div></div>
      <div class="done-msg" id="donemsg" ${done===total?'':'hidden'}>${ICON.check.replace('<svg','<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"').replace('<path ','<path style="stroke-dasharray:none" ')} Tout est dans le caddie. Bonnes courses !</div>
      ${aisles}
+     ${pbox}
      ${fallbackText?`<textarea class="copybox" id="copybox" rows="8" readonly aria-label="Liste à copier">${fallbackText}</textarea>`:''}
-     <p class="fine">Prix estimés d’après un tarif de référence E.Leclerc, ajusté pour ${store().n}. Le total réel dépend de ton magasin et de la date. Non comptés : sel, poivre, huile, épices et condiments de base.</p>`,
+     <p class="fine">${nLive?`Prix : relevés récents d’Open Prices (${nLive} sur ${total}), le reste estimé d’après un tarif de référence E.Leclerc ajusté pour ${store().n}.`:`Prix estimés d’après un tarif de référence E.Leclerc, ajusté pour ${store().n}${pricesFailed?' (les prix relevés n’ont pas pu être chargés)':''}.`} Le total réel dépend de ton magasin et de la date. Non comptés : sel, poivre, huile, épices et condiments de base.</p>`,
     `<button class="btn primary big" data-act="copy">Copier la liste</button><button class="btn big" disabled title="Bientôt disponible">Ajouter au drive <span class="tag">bientôt</span></button><button class="btn ghost big" data-act="restart">Recommencer</button>`,'mid');
 }
 };
@@ -869,6 +897,7 @@ function next(){
   if(editing&&EDITABLE.includes(s)){editing=false; return go('recap',1);}
   if(s==='recap') return begin();
   if(s==='menu'){coursesTab='liste'; fallbackText='';}
+  if(s==='intro') ensurePrices();
   go(NEXT[s],1);
 }
 function back(){
@@ -880,6 +909,57 @@ function begin(){
   if(S.sig===sigNow()&&S.sel.length) return go('menu',1);
   go('loading',1);
 }
+/* ---------- Prix réels : /api/prix (Open Prices) ---------- */
+let pricesJob=null, pricesFailed=false;
+function ensurePrices(){
+  const key=priceKey();
+  if(S.prices&&S.prices.key===key&&Date.now()-S.prices.at<6*3600e3) return Promise.resolve();
+  if(pricesJob&&pricesJob.key===key) return pricesJob.p;
+  const pl=S.prefs.place, qs=new URLSearchParams({store:S.prefs.store});
+  if(pl){qs.set('lat',pl.lat); qs.set('lon',pl.lon);}
+  const ctrl=new AbortController(), to=setTimeout(()=>ctrl.abort(),58000), job={key};
+  job.p=fetch('/api/prix?'+qs,{signal:ctrl.signal}).then(r=>{if(!r.ok) throw new Error('http '+r.status); return r.json();}).then(d=>{
+    if(priceKey()!==key) return; /* le magasin ou la zone a changé entre-temps */
+    if(d&&d.items&&Object.keys(d.items).length){S.prices={key,at:Date.now(),items:d.items,stats:d.stats||null,store:d.storeName||''}; pricesFailed=false; save();}
+    else pricesFailed=true;
+  }).catch(e=>{pricesFailed=true; console.warn('Caddie : prix réels indisponibles, tarif de référence utilisé.',e&&e.message?e.message:e);})
+    .finally(()=>{clearTimeout(to); if(pricesJob===job) pricesJob=null;});
+  pricesJob=job; return job.p;
+}
+const livePricesForAI=()=>{const o={}; if(S.prices&&S.prices.key===priceKey()) Object.entries(S.prices.items).forEach(([id,x])=>{if(ING[id]&&x.p>0) o[id]=x.p}); return o;};
+async function geocode(cp){
+  /* Géoplateforme (IGN) d'abord, ancienne adresse de l'API Adresse en secours */
+  for(const base of ['https://data.geopf.fr/geocodage/search','https://api-adresse.data.gouv.fr/search']){
+    try{
+      const r=await fetch(base+'?q='+cp+'&type=municipality&limit=1'); if(!r.ok) continue;
+      const f=((await r.json()).features||[])[0];
+      if(!f||!f.geometry||!f.geometry.coordinates) return null;
+      const [lon,lat]=f.geometry.coordinates, pr=f.properties||{};
+      return {label:String(pr.city||pr.name||cp),lat:Math.round(lat*100)/100,lon:Math.round(lon*100)/100};
+    }catch(e){}
+  }
+  throw new Error('geo');
+}
+async function setPlace(){
+  const inp=$('#cp'), msg=$('#geomsg'); if(!inp||!msg) return;
+  const cp=(inp.value||'').trim();
+  if(!/^\d{5}$/.test(cp)){msg.className='bad'; msg.textContent='Entre un code postal à 5 chiffres.'; return;}
+  msg.className='muted'; msg.textContent='Recherche en cours…';
+  try{
+    const g=await geocode(cp);
+    if(!g){msg.className='bad'; msg.textContent='Code postal introuvable. Tu peux continuer sans.'; return;}
+    S.prefs.place={cp,...g}; save(); ensurePrices(); refresh(); flash('Prix relevés autour de '+g.label);
+  }catch(e){msg.className='bad'; msg.textContent='Impossible de te localiser pour l’instant. Tu peux continuer sans.';}
+}
+const fmtDate=d=>{const t=Date.parse(d); return t?new Date(t).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'}):''};
+function srcText(x){
+  const n=x.n+' '+(x.n>1?'relevés':'relevé');
+  if(x.src==='magasin_local') return `${x.st||store().n}, près de chez toi · ${n} · ${fmtDate(x.d)}`;
+  if(x.src==='magasin') return `${x.st||store().n} · ${n} · ${fmtDate(x.d)}`;
+  if(x.src==='zone') return `Autres magasins près de chez toi, ajusté ${store().n} · ${n} · ${fmtDate(x.d)}`;
+  return `Moyenne en France, ajustée ${store().n} · ${n} · ${fmtDate(x.d)}`;
+}
+
 /* IA : mettre l'adresse du serveur ici une fois déployé (voir le guide). Vide = recettes locales uniquement.
    Le serveur renvoie des recettes au format de REC ; registerRecipe() les revérifie, le prix reste calculé ici. */
 const AI_ENDPOINT='/api/menus';
@@ -887,7 +967,7 @@ async function getMenus(){
   if(AI_ENDPOINT){
     try{
       const ctrl=new AbortController(), to=setTimeout(()=>ctrl.abort(),58000);
-      const res=await fetch(AI_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prefs:S.prefs}),signal:ctrl.signal});
+      const res=await fetch(AI_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prefs:{...S.prefs,place:undefined},prices:livePricesForAI()}),signal:ctrl.signal});
       clearTimeout(to);
       if(!res.ok) throw new Error('http '+res.status);
       const data=await res.json(), ids=[], kept=[];
@@ -910,6 +990,8 @@ async function getMenus(){
 }
 async function runLoading(){
   const t0=performance.now();
+  /* les prix réels sont normalement déjà chargés en arrière-plan ; on attend au plus 25 s s'ils ne le sont pas */
+  try{await Promise.race([ensurePrices(),new Promise(r=>setTimeout(r,25000))]);}catch(e){}
   try{await getMenus();}catch(e){generate();}
   const wait=reduced?300:Math.max(0,2500-(performance.now()-t0));
   setTimeout(()=>{if(S.step==='loading') go('menu',1)},wait);
@@ -995,7 +1077,7 @@ document.addEventListener('click',e=>{
     case 'inc': case 'dec': {const max=key==='people'?12:14; const v=Math.min(max,Math.max(1,p[key]+(act==='inc'?1:-1))); if(v!==p[key]) setCount(key,v,act==='inc'); return;}
     case 'setmeals': return setCount('meals',+val,+val>p.meals);
     case 'budget': {p.budget=+val; save(); const i=$('#budget'); i.value=val; i.style.setProperty('--len',String(val).length); updateBudgetUI(); return;}
-    case 'store': {p.store=val; save(); document.querySelectorAll('[data-act="store"]').forEach(b=>b.setAttribute('aria-pressed',String(b===el))); restart(el,'pop'); return;}
+    case 'store': {p.store=val; save(); ensurePrices(); document.querySelectorAll('[data-act="store"]').forEach(b=>b.setAttribute('aria-pressed',String(b===el))); restart(el,'pop'); return;}
     case 'toggle': {const a=p[key], i=a.indexOf(val); if(i>-1) a.splice(i,1); else a.push(val); save();
       el.setAttribute('aria-pressed',String(i===-1)); restart(el,'pop');
       if(key==='avoid') updateAvoidUI(); else if(key==='equip') updateEquipUI(); else updateTasteUI();
@@ -1010,6 +1092,8 @@ document.addEventListener('click',e=>{
     case 'check': {if(el.checked) S.checked[id]=true; else delete S.checked[id]; save();
       const row=el.closest('.row'); row.classList.toggle('done',el.checked); if(el.checked) burst(row.querySelector('.box')); updateChecked(); return;}
     case 'regen': S.sig=''; return go('loading',1);
+    case 'geo': return setPlace();
+    case 'clearplace': S.prefs.place=null; save(); ensurePrices(); refresh(); return;
     case 'copy': return copyList();
     case 'copyrec': return copyRecipes();
     case 'open': return openRecipe(id);
@@ -1028,6 +1112,7 @@ document.addEventListener('input',e=>{
   }
 });
 document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&e.target.id==='cp'){e.preventDefault(); setPlace(); return;}
   if(e.key==='Enter'&&!e.target.closest('button,a,textarea,select,label')){
     const n=$('[data-act="next"]'); if(n&&!n.disabled){e.preventDefault(); n.click();}
   }

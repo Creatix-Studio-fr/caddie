@@ -39,6 +39,15 @@ Si aucune pastille n'apparaît, le site a utilisé ses recettes de secours. Voir
 - **Détail d'une recette** : toucher une recette du menu ouvre une fiche (préparation, cuisson, temps total, quantités pour le nombre de personnes, matériel, étapes, allergènes).
 - **Onglet Recettes** : sur l'écran « Ta liste de courses », l'onglet « Recettes » déplie le détail de toutes les recettes du menu, avec un bouton pour les copier.
 
+## Prix réels avec Open Prices
+Le site utilise maintenant les prix réellement relevés par la communauté sur [Open Prices](https://prices.openfoodfacts.org) (Open Food Facts) : prix par magasin, date du relevé, code-barres du produit et photo de preuve.
+- **Écran « Où fais-tu tes courses ? »** : un code postal facultatif permet de viser les relevés autour de chez toi. Le code postal est converti en coordonnées (arrondies à 1 km) par le service officiel de géocodage de l'IGN, directement depuis le navigateur.
+- **`api/prix.js`** : interroge Open Prices pour chaque ingrédient (catégories dans `lib/openprices.js`, tableau `MAP`), ramène chaque relevé au prix du paquet du catalogue, écarte les valeurs aberrantes, les produits bio et les relevés hors de France, puis garde la médiane la plus précise : même enseigne près de chez toi, même enseigne ailleurs, autres magasins du coin, puis moyenne France. Sans assez de relevés, le site garde son prix estimé.
+- **Cache** : la réponse est gardée 6 h par Vercel pour chaque combinaison enseigne + zone, donc le calcul (une centaine d'appels à Open Prices) n'a lieu qu'une fois toutes les quelques heures. Le site charge les prix en arrière-plan dès l'accueil.
+- **Gemini** : le site envoie à `/api/menus` les prix réels des paquets. Le serveur les revérifie (nombres plausibles uniquement, jamais de texte venant d'Open Prices) et les met dans le prompt, avec la liste des « bons plans » (au moins 12 % moins chers que d'habitude) et des ingrédients devenus chers, pour que l'IA compose des recettes adaptées au budget. Les prix affichés restent calculés par le site, jamais par l'IA.
+- **Transparence** : dans la liste de courses, chaque ligne indique « relevé » (avec la date) ou « estimé », et le panneau « D'où viennent les prix ? » donne le magasin, le nombre de relevés, la date et un lien vers les relevés du produit sur Open Prices. La source et la licence ODbL sont citées.
+- **Réglage** : pour voir ce que trouve chaque ingrédient, ouvre `/api/prix?store=leclerc&debug=1` (nombre d'appels, de relevés et niveau de précision par ingrédient). Si un ingrédient reste « estimé », ajuste ses catégories dans `MAP` (lib/openprices.js). Variable facultative `OPEN_PRICES_UA` : texte envoyé comme User-Agent (par exemple le nom de ton site et un contact).
+
 ## Comment ça marche
 1. Le site envoie tes réponses (dont le matériel) à `/api/menus`.
 2. Le serveur donne à Gemini la liste des ingrédients autorisés, ton matériel, tes envies et tes exclusions, et lui demande le double de recettes avec leurs étapes.

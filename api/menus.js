@@ -26,6 +26,8 @@ const DEFAULT_EQUIP = ['plaques', 'four', 'micro'];
 const MAX_RECIPES = 28; // 2 × 14 repas
 
 const STORES = ['leclerc', 'intermarche', 'auchan', 'carrefour', 'systemeu', 'lidl', 'aldi'];
+/* Même coefficients que le site : prix du catalogue (référence E.Leclerc) -> prix estimé dans l'enseigne. */
+const STORE_K = { leclerc: 1, intermarche: 1.04, auchan: 1.06, carrefour: 1.08, systemeu: 1.07, lidl: 0.94, aldi: 0.93 };
 const TASTE_LABELS = {
   rapide: 'rapide (25 min max)', eco: 'petit prix', leger: 'léger', confort: 'réconfortant', cremeux: 'crémeux',
   epice: 'épicé', four: 'gratins et plats au four', pates: 'pâtes', riz: 'riz', pdt: 'pommes de terre', oeufs: 'œufs',
@@ -75,8 +77,22 @@ function cleanPrefs(p) {
     store: STORES.includes(p.store) ? p.store : 'leclerc',
     tastes: (Array.isArray(p.tastes) ? p.tastes : []).filter(x => TASTE_LABELS[x]).slice(0, 12),
     avoid: (Array.isArray(p.avoid) ? p.avoid : []).filter(x => AVOID_TEST[x]).slice(0, 15),
-    equip: Array.isArray(p.equip) ? [...new Set(p.equip.filter(x => EQUIP_IDS.includes(x)))] : DEFAULT_EQUIP
+    equip: Array.isArray(p.equip) ? [...new Set(p.equip.filter(x => EQUIP_IDS.includes(x)))] : DEFAULT_EQUIP,
+    prices: {}
   };
+}
+
+/* Prix réels envoyés par le site (relevés Open Prices, prix du paquet dans l'enseigne choisie).
+   Seuls des nombres plausibles sont gardés : aucun texte venant d'Open Prices n'entre jamais dans le prompt. */
+function cleanPrices(raw, store) {
+  const out = {};
+  if (!raw || typeof raw !== 'object') return out;
+  IDS.forEach(id => {
+    const v = Number(raw[id]);
+    const ref = INGREDIENTS[id].price * STORE_K[store];
+    if (Number.isFinite(v) && v >= ref * 0.35 && v <= ref * 3) out[id] = Math.round(v * 100) / 100;
+  });
+  return out;
 }
 
 function buildPrompt(p) {
@@ -85,8 +101,14 @@ function buildPrompt(p) {
   const catalogue = IDS.map(id => {
     const g = INGREDIENTS[id];
     const unit = g.unit === 'pc' ? `pièces (${g.noun})` : g.unit;
-    return `${id} | ${g.name} | quantité en ${unit} | paquet de ${g.pack} à ${g.price} €`;
+    const price = p.prices[id] != null ? p.prices[id] : Math.round(g.price * STORE_K[p.store] * 100) / 100;
+    return `${id} | ${g.name} | quantité en ${unit} | paquet de ${g.pack} à ${price} €`;
   }).join('\n');
+  /* Bons plans et ingrédients chers du moment, d'après l'écart avec le prix habituel : sert à composer de meilleures recettes pour le budget. */
+  const ratio = id => p.prices[id] / (INGREDIENTS[id].price * STORE_K[p.store]);
+  const live = Object.keys(p.prices);
+  const deals = live.filter(id => ratio(id) <= 0.88).sort((a, b) => ratio(a) - ratio(b)).slice(0, 8);
+  const dear = live.filter(id => ratio(id) >= 1.2).sort((a, b) => ratio(b) - ratio(a)).slice(0, 6);
   const system = [
     'Tu es un cuisinier français qui compose des menus simples, variés et économiques.',
     'Règles strictes :',
@@ -100,6 +122,7 @@ function buildPrompt(p) {
     '- Les recettes sont toutes différentes, avec au plus deux plats ayant la même base (pâtes, riz ou pommes de terre).',
     '- Tu respectes strictement les aliments à éviter.',
     '- Tu vises un coût moyen par personne et par repas proche de l’objectif, sans le dépasser, en t’aidant des prix des paquets.',
+    live.length ? '- Les prix des paquets sont des prix réels relevés récemment pour l’enseigne choisie : fie-toi à eux. Privilégie les bons plans indiqués et évite autant que possible les ingrédients devenus chers.' : '- Les prix des paquets sont des estimations.',
     '- Tu réponds uniquement par un objet JSON de la forme {"recipes":[{"name":"...","prep":10,"cook":20,"equipment":["plaques"],"tags":["..."],"ingredients":[{"id":"...","qty":100}],"steps":["..."]}]}, sans aucun texte autour.',
     `- Tags possibles : ${AI_TAGS.join(', ')}.`
   ].join('\n');
@@ -109,6 +132,8 @@ function buildPrompt(p) {
     `Objectif de coût : environ ${perMeal} € par personne et par repas.`,
     p.tastes.length ? `Envies : ${p.tastes.map(t => TASTE_LABELS[t]).join(', ')}.` : 'Envies : aucune préférence, varie les plats.',
     p.avoid.length ? `À éviter absolument : ${p.avoid.map(a => AVOID_LABELS[a]).join(' ; ')}.` : 'À éviter : rien.',
+    deals.length ? `Bons plans du moment (moins chers que d'habitude) : ${deals.map(id => INGREDIENTS[id].name + ' (' + id + ')').join(', ')}.` : '',
+    dear.length ? `Plus chers que d'habitude : ${dear.map(id => INGREDIENTS[id].name + ' (' + id + ')').join(', ')}.` : '',
     '',
     'Ingrédients autorisés (identifiant | nom | unité | paquet) :',
     catalogue
@@ -293,6 +318,7 @@ module.exports = async function handler(req, res) {
   let body = req.body;
   try { if (typeof body === 'string') body = JSON.parse(body); } catch (e) { return res.status(400).json({ error: 'json' }); }
   const prefs = cleanPrefs(body && body.prefs);
+  prefs.prices = cleanPrices(body && body.prices, prefs.store);
   const { system, user } = buildPrompt(prefs);
   const deadline = Date.now() + TOTAL_BUDGET_MS;
 

@@ -2,6 +2,9 @@
   "functions": {
     "api/menus.js": {
       "maxDuration": 60
+    },
+    "api/prix.js": {
+      "maxDuration": 60
     }
   }
 }
